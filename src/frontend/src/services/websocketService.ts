@@ -17,6 +17,7 @@ import {
   PlayerLocation,
   ZKProofData,
   ChatMessage,
+  H3MapUpdateMessage,
   isWebSocketMessage
 } from '../types/websocket';
 
@@ -58,47 +59,85 @@ export class WebSocketService implements IWebSocketService {
     this.currentGameId = gameId;
     this.updateConnectionStatus(WebSocketConnectionStatus.CONNECTING);
 
-    try {
-      const url = gameId ? `${this.config.url}?gameId=${gameId}` : this.config.url;
-      this.ws = new WebSocket(url, this.config.protocols);
-      
-      this.ws.addEventListener('open', this.handleOpen);
-      this.ws.addEventListener('close', this.handleClose);
-      this.ws.addEventListener('error', this.handleError);
-      this.ws.addEventListener('message', this.handleMessage);
-
-      // Connection timeout
-      const timeoutPromise = new Promise<void>((_, reject) => {
-        setTimeout(() => reject(new Error('Connection timeout')), 10000);
-      });
-
-      const connectPromise = new Promise<void>((resolve, reject) => {
-        const openHandler = () => {
-          this.ws?.removeEventListener('open', openHandler);
-          resolve();
-        };
-        const errorHandler = () => {
-          this.ws?.removeEventListener('error', errorHandler);
-          reject(new Error('Connection failed'));
+    return new Promise<void>((resolve, reject) => {
+      try {
+        const url = gameId ? `${this.config.url}?gameId=${gameId}` : this.config.url;
+        this.ws = new WebSocket(url, this.config.protocols);
+        
+        // Set up promise-based handlers that will be cleaned up
+        let timeoutId: NodeJS.Timeout | null = null;
+        let isResolved = false;
+        
+        const cleanup = () => {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+          if (this.ws) {
+            this.ws.removeEventListener('open', openHandler);
+            this.ws.removeEventListener('error', errorHandler);
+          }
         };
         
-        this.ws?.addEventListener('open', openHandler);
-        this.ws?.addEventListener('error', errorHandler);
-      });
+        const openHandler = () => {
+          if (isResolved) return;
+          isResolved = true;
+          cleanup();
+          resolve();
+        };
+        
+        const errorHandler = () => {
+          if (isResolved) return;
+          isResolved = true;
+          cleanup();
+          const error = new Error('Connection failed');
+          this.handleConnectionError(error);
+          reject(error);
+        };
+        
+        // Set up temporary listeners for connection promise
+        this.ws.addEventListener('open', openHandler);
+        this.ws.addEventListener('error', errorHandler);
+        
+        // Set up permanent service event listeners
+        this.ws.addEventListener('open', this.handleOpen);
+        this.ws.addEventListener('close', this.handleClose);
+        this.ws.addEventListener('error', this.handleError);
+        this.ws.addEventListener('message', this.handleMessage);
 
-      await Promise.race([connectPromise, timeoutPromise]);
-    } catch (error) {
-      this.handleConnectionError(error as Error);
-      throw error;
-    }
+        // Connection timeout
+        timeoutId = setTimeout(() => {
+          if (isResolved) return;
+          isResolved = true;
+          cleanup();
+          const error = new Error('Connection timeout');
+          this.handleConnectionError(error);
+          reject(error);
+        }, 10000);
+        
+      } catch (error) {
+        this.handleConnectionError(error as Error);
+        reject(error);
+      }
+    });
   }
 
   public disconnect(): void {
     this.clearTimers();
     
     if (this.ws) {
+      // Remove all event listeners before closing
+      this.ws.removeEventListener('open', this.handleOpen);
+      this.ws.removeEventListener('close', this.handleClose);
+      this.ws.removeEventListener('error', this.handleError);
+      this.ws.removeEventListener('message', this.handleMessage);
+      
       // Clean close
-      this.ws.close(1000, 'Client disconnect');
+      try {
+        this.ws.close(1000, 'Client disconnect');
+      } catch {
+        // Ignore close errors
+      }
       this.ws = null;
     }
 
@@ -144,7 +183,9 @@ export class WebSocketService implements IWebSocketService {
   }
 
   public isConnected(): boolean {
-    return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
+    return this.ws !== null && 
+           this.ws.readyState === WebSocket.OPEN && 
+           this.connectionInfo.status === WebSocketConnectionStatus.CONNECTED;
   }
 
   public getConnectionInfo(): WebSocketConnectionInfo {
@@ -293,7 +334,13 @@ export class WebSocketService implements IWebSocketService {
 
   private handleError(event: Event): void {
     console.error('WebSocket: Connection error', event);
-    this.emit('onError', new Error('WebSocket connection error'));
+    
+    // Only emit error if we're not already in error state
+    if (this.connectionInfo.status !== WebSocketConnectionStatus.ERROR) {
+      const error = new Error('WebSocket connection error');
+      // Don't call handleConnectionError here to avoid double state updates
+      this.emit('onError', error);
+    }
   }
 
   private handleMessage(event: MessageEvent): void {
@@ -361,12 +408,25 @@ export class WebSocketService implements IWebSocketService {
 
     const eventType = eventMap[message.type];
     if (eventType && eventType !== 'onMessage') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this.emit(eventType, message.data as any);
     }
   }
 
   private handleConnectionError(error: Error): void {
     this.updateConnectionStatus(WebSocketConnectionStatus.ERROR);
+    this.clearTimers();
+    
+    // Clean up WebSocket if it exists
+    if (this.ws) {
+      try {
+        this.ws.close();
+      } catch {
+        // Ignore close errors
+      }
+      this.ws = null;
+    }
+    
     this.emit('onError', error);
   }
 

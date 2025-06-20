@@ -77,8 +77,8 @@ export class ZkProofService {
 
       // Prepare request payload
       const payload: ProveRequest = {
-        lat: coordinates.lat,
-        lon: coordinates.lon,
+        latitude: validatedCoords.lat,
+        longitude: validatedCoords.lon,
         resolution,
         h3_map: h3Map
       };
@@ -298,21 +298,21 @@ export class ZkProofService {
   private validateCoordinates(coords: LocationCoordinates): ValidatedCoordinates {
     const errors: string[] = [];
 
-    if (typeof coords.lat !== 'number' || isNaN(coords.lat)) {
+    if (typeof coords.latitude !== 'number' || isNaN(coords.latitude)) {
       errors.push('Latitude must be a valid number');
-    } else if (coords.lat < -90 || coords.lat > 90) {
+    } else if (coords.latitude < -90 || coords.latitude > 90) {
       errors.push('Latitude must be between -90 and 90');
     }
 
-    if (typeof coords.lon !== 'number' || isNaN(coords.lon)) {
+    if (typeof coords.longitude !== 'number' || isNaN(coords.longitude)) {
       errors.push('Longitude must be a valid number');
-    } else if (coords.lon < -180 || coords.lon > 180) {
+    } else if (coords.longitude < -180 || coords.longitude > 180) {
       errors.push('Longitude must be between -180 and 180');
     }
 
     return errors.length > 0 
       ? { valid: false, errors }
-      : { lat: coords.lat, lon: coords.lon, valid: true };
+      : { lat: coords.latitude, lon: coords.longitude, valid: true };
   }
 
   /**
@@ -368,7 +368,7 @@ export class ZkProofService {
     resolution: number,
     h3Map: H3Index[]
   ): string {
-    return `${coords.lat},${coords.lon},${resolution},${h3Map.sort().join(',')}`;
+    return `${coords.latitude},${coords.longitude},${resolution},${h3Map.sort().join(',')}`;
   }
 
   /**

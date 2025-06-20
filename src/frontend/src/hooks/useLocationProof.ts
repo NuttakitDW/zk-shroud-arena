@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { zkProofService } from '../services/zkProofService';
 import {
   ZkProof,
@@ -11,7 +11,6 @@ import {
   ZkProofError,
   ZkProofErrorType
 } from '../types/zkProof';
-import { PrivacyLocation } from '../components/Location/LocationTracker';
 
 // Battle royale specific types
 export interface LocationVerificationState {
@@ -51,6 +50,7 @@ export interface UseLocationProofOptions {
   proofInterval?: number; // milliseconds between automatic proofs
   maxMovementSpeed?: number; // meters per second
   h3Resolution?: number;
+  h3Map?: H3Index[]; // H3 map from server, uses default if not provided
   enableAntiCheat?: boolean;
   onProofGenerated?: (proof: ZkProof) => void;
   onVerificationComplete?: (verification: LocationVerification) => void;
@@ -59,7 +59,7 @@ export interface UseLocationProofOptions {
 
 export interface UseLocationProofReturn {
   state: LocationVerificationState;
-  generateLocationProof: (location: LocationCoordinates, zone?: string) => Promise<ProveResult>;
+  generateLocationProof: (location: LocationCoordinates, zone?: string, h3Map?: H3Index[]) => Promise<ProveResult>;
   verifyLocationProof: (proof: ZkProof) => Promise<VerifyResult>;
   validatePlayerMovement: (
     previousLocation: LocationCoordinates,
@@ -75,6 +75,8 @@ export interface UseLocationProofReturn {
     maxSpeed: number;
     suspiciousMovements: number;
   };
+  updateH3Map: (h3Map: H3Index[]) => void;
+  hasH3Map: () => boolean;
 }
 
 // Default H3 map for battle royale area - represents valid game zones
@@ -108,7 +110,8 @@ const DEFAULT_OPTIONS: Required<UseLocationProofOptions> = {
 export const useLocationProof = (
   options: UseLocationProofOptions = {}
 ): UseLocationProofReturn => {
-  const config = { ...DEFAULT_OPTIONS, ...options };
+  const config = useMemo(() => ({ ...DEFAULT_OPTIONS, ...options }), [options]);
+  const [currentH3Map, setCurrentH3Map] = useState<H3Index[] | null>(options.h3Map || null);
   
   const [state, setState] = useState<LocationVerificationState>({
     isGenerating: false,
@@ -135,10 +138,10 @@ export const useLocationProof = (
     coord2: LocationCoordinates
   ): number => {
     const R = 6371000; // Earth's radius in meters
-    const φ1 = coord1.lat * Math.PI / 180;
-    const φ2 = coord2.lat * Math.PI / 180;
-    const Δφ = (coord2.lat - coord1.lat) * Math.PI / 180;
-    const Δλ = (coord2.lon - coord1.lon) * Math.PI / 180;
+    const φ1 = coord1.latitude * Math.PI / 180;
+    const φ2 = coord2.latitude * Math.PI / 180;
+    const Δφ = (coord2.latitude - coord1.latitude) * Math.PI / 180;
+    const Δλ = (coord2.longitude - coord1.longitude) * Math.PI / 180;
 
     const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
               Math.cos(φ1) * Math.cos(φ2) *
@@ -151,7 +154,8 @@ export const useLocationProof = (
   // Generate ZK proof for current location
   const generateLocationProof = useCallback(async (
     location: LocationCoordinates,
-    zone?: string
+    zone?: string,
+    h3Map?: H3Index[]
   ): Promise<ProveResult> => {
     if (state.isGenerating) {
       return {
@@ -168,10 +172,25 @@ export const useLocationProof = (
     setState(prev => ({ ...prev, isGenerating: true, error: null }));
 
     try {
+      // Use provided h3Map, config h3Map, or fall back to default
+      const mapToUse = h3Map || config.h3Map || DEFAULT_H3_MAP;
+      
+      if (!mapToUse || mapToUse.length === 0) {
+        return {
+          success: false,
+          error: {
+            name: 'H3MapNotAvailable',
+            message: 'H3 map data not available. Waiting for server data.',
+            type: ZkProofErrorType.VALIDATION_ERROR,
+            retryable: true
+          } as ZkProofError
+        };
+      }
+      
       const result = await zkProofService.generateProof(
         location,
         config.h3Resolution,
-        DEFAULT_H3_MAP,
+        mapToUse,
         { useCache: true }
       );
 
@@ -379,8 +398,8 @@ export const useLocationProof = (
   // Check if location is reasonable for the game
   const isLocationReasonable = useCallback((location: LocationCoordinates): boolean => {
     // Basic bounds checking - could be enhanced with game-specific zones
-    const isValidLatLon = location.lat >= -90 && location.lat <= 90 &&
-                         location.lon >= -180 && location.lon <= 180;
+    const isValidLatLon = location.latitude >= -90 && location.latitude <= 90 &&
+                         location.longitude >= -180 && location.longitude <= 180;
     
     // Check if location is within expected game area (example bounds)
     const gameAreaBounds = {
@@ -388,10 +407,10 @@ export const useLocationProof = (
       minLon: -122.5, maxLon: -122.3
     };
     
-    const inGameArea = location.lat >= gameAreaBounds.minLat && 
-                      location.lat <= gameAreaBounds.maxLat &&
-                      location.lon >= gameAreaBounds.minLon && 
-                      location.lon <= gameAreaBounds.maxLon;
+    const inGameArea = location.latitude >= gameAreaBounds.minLat && 
+                      location.latitude <= gameAreaBounds.maxLat &&
+                      location.longitude >= gameAreaBounds.minLon && 
+                      location.longitude <= gameAreaBounds.maxLon;
 
     return isValidLatLon && inGameArea;
   }, []);
@@ -441,6 +460,21 @@ export const useLocationProof = (
     };
   }, [config.autoGenerateProofs, state.nextProofRequired, state.isGenerating, generateLocationProof]);
 
+  // Update H3 map when provided through options changes
+  useEffect(() => {
+    if (options.h3Map && options.h3Map.length > 0) {
+      setCurrentH3Map(options.h3Map);
+    }
+  }, [options.h3Map]);
+
+  const updateH3Map = useCallback((h3Map: H3Index[]) => {
+    setCurrentH3Map(h3Map);
+  }, []);
+
+  const hasH3Map = useCallback(() => {
+    return (currentH3Map && currentH3Map.length > 0) || false;
+  }, [currentH3Map]);
+
   return {
     state,
     generateLocationProof,
@@ -449,6 +483,8 @@ export const useLocationProof = (
     getPlayerTrustScore,
     clearVerificationHistory,
     isLocationReasonable,
-    getMovementMetrics
+    getMovementMetrics,
+    updateH3Map,
+    hasH3Map
   };
 };
