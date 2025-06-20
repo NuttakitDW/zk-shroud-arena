@@ -1,5 +1,6 @@
 // Location components exports
 export { LocationTracker } from './LocationTracker';
+export { LocationPrivacyControls } from './LocationPrivacyControls';
 
 // Types exports
 export type {
