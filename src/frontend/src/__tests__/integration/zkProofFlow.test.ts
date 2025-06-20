@@ -2,6 +2,7 @@ import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals
 
 // Type declarations for custom matchers (defined in setup.ts)
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Matchers<R> {
       toBeDefined(): R;
@@ -20,10 +21,7 @@ import {
   loadCircuit,
   getCircuitInfo,
   zkProofTestUtils, 
-  type GameStateProof,
-  type ProofInput,
-  type ProofOutput,
-  type VerificationResult
+  type GameStateProof
 } from '../../__mocks__/zkProofService'
 
 // Mock fetch for API calls
@@ -307,8 +305,8 @@ describe('ZK Proof Flow Integration Tests', () => {
 
     it('should validate input parameters', async () => {
       const invalidInputs = [
-        { ...zkProofTestUtils.createTestInput(), playerPosition: null as any },
-        { ...zkProofTestUtils.createTestInput(), actionType: 'invalid' as any },
+        { ...zkProofTestUtils.createTestInput(), playerPosition: null as unknown },
+        { ...zkProofTestUtils.createTestInput(), actionType: 'invalid' as unknown },
         { ...zkProofTestUtils.createTestInput(), timestamp: -1 },
       ]
 

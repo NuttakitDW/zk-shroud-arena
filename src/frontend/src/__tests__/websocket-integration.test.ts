@@ -173,7 +173,7 @@ describe('WebSocket Integration', () => {
       
       const queue = service.getMessageQueue();
       expect(queue.length).toBe(1);
-      expect((queue[0].message.data as any).message).toBe('Queued message');
+      expect((queue[0].message.data as unknown as { message: string }).message).toBe('Queued message');
     });
   });
 
