@@ -5,8 +5,9 @@
 
 // Base location coordinates
 export interface LocationCoordinates {
-  lat: number;
-  lon: number;
+  latitude: number;
+  longitude: number;
+  altitude?: number;
 }
 
 // H3 geospatial index representation
@@ -14,8 +15,8 @@ export type H3Index = string;
 
 // Proof generation request payload
 export interface ProveRequest {
-  lat: number;
-  lon: number;
+  latitude: number;
+  longitude: number;
   resolution: number;
   h3_map: H3Index[];
 }

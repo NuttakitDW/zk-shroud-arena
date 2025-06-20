@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useGameContext } from '../contexts/GameContext';
 import {
-  GameState,
   PlayerLocation,
   ZKProofStatus,
   ZKProofData,
@@ -215,7 +214,7 @@ export const useGamePhase = () => {
  * Hook for real-time updates and connection status
  */
 export const useRealtimeState = () => {
-  const { state, actions } = useGameState();
+  const { state } = useGameState();
   const [connectionError, setConnectionError] = useState<GameError | null>(null);
   
   const realtimeActions = useMemo(() => ({
@@ -230,7 +229,7 @@ export const useRealtimeState = () => {
       await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
       return Date.now() - start;
     },
-  }), [actions]);
+  }), []);
 
   // Monitor connection status
   useEffect(() => {

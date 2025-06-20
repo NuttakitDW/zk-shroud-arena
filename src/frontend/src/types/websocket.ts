@@ -49,6 +49,7 @@ export enum WebSocketMessageType {
   GAME_PHASE_CHANGE = 'game_phase_change',
   GAME_TIMER_UPDATE = 'game_timer_update',
   GAME_STATE_SYNC = 'game_state_sync',
+  H3_MAP_UPDATE = 'h3_map_update',
   
   // ZK Proof system
   ZK_PROOF_GENERATED = 'zk_proof_generated',
@@ -114,6 +115,13 @@ export interface ArenaZoneUpdateMessage {
   nextZone?: SafeZone;
   shrinkStartTime?: number;
   shrinkDuration?: number;
+}
+
+export interface H3MapUpdateMessage {
+  h3Map: string[];
+  resolution: number;
+  arenaId: string;
+  timestamp: number;
 }
 
 export interface GamePhaseChangeMessage {
@@ -247,6 +255,7 @@ export interface WebSocketEventHandlers {
   onChatMessage?: (data: ChatMessage) => void;
   onSystemAnnouncement?: (data: SystemAnnouncementMessage) => void;
   onRateLimit?: (data: RateLimitMessage) => void;
+  onH3MapUpdate?: (data: H3MapUpdateMessage) => void;
 }
 
 // WebSocket service interface
