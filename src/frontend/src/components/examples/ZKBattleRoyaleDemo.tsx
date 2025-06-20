@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { LocationTracker, PrivacyLocation } from '../Location/LocationTracker';
 import { ZKLocationVerifier } from '../ZKProofIntegration/ZKLocationVerifier';
-import { GameMap, PlayerPosition } from '../Map/GameMap';
+import { GameMap, Position as PlayerPosition } from '../Map/GameMap';
 import { useGameState } from '../../hooks/useGameState';
 import { LocationCoordinates, ZkProof } from '../../types/zkProof';
 import { GamePhase } from '../../types/gameState';
