@@ -1,12 +1,59 @@
 use ark_ff::PrimeField;
 use ark_r1cs_std::{fields::fp::FpVar, prelude::Boolean};
 
+#[derive(Copy, Clone)]
 pub struct Dec<F: PrimeField, const PREC: u32> {
     pub val: F,
     pub neg: bool,
 }
 
-impl<F: PrimeField, const PREC: u32> Dec<F, PREC> {}
+impl<F: PrimeField, const PREC: u32> Dec<F, PREC> {
+    fn signed_add_u128(a_neg: bool, a_mag: u128, b_neg: bool, b_mag: u128) -> (bool, u128) {
+        if a_neg == b_neg {
+            (a_neg, a_mag.saturating_add(b_mag))
+        } else {
+            if a_mag >= b_mag {
+                (a_neg, a_mag - b_mag)
+            } else {
+                (b_neg, b_mag - a_mag)
+            }
+        }
+    }
+
+    fn u128_from_field_element(f: F) -> u128 {
+        let bigint = f.into_bigint();
+        let limbs = bigint.as_ref();
+
+        match limbs {
+            [lo] => *lo as u128,
+            [lo, hi, ..] => (*lo as u128) | ((*hi as u128) << 64),
+            _ => 0,
+        }
+    }
+
+    pub fn add(self, rhs: Self) -> Self {
+        let a_u128 = Self::u128_from_field_element(self.val);
+        let b_u128 = Self::u128_from_field_element(rhs.val);
+
+        let (res_neg, res_val_u128) = Self::signed_add_u128(self.neg, a_u128, rhs.neg, b_u128);
+        let res_neg = if res_val_u128 == 0 { false } else { res_neg };
+
+        Self {
+            val: F::from(res_val_u128),
+            neg: res_neg,
+        }
+    }
+
+    pub fn sub(self, rhs: Self) -> Self {
+        let mut r_negated = rhs;
+        if rhs.val == F::zero() {
+            r_negated.neg = false;
+        } else {
+            r_negated.neg = !rhs.neg;
+        }
+        self.add(r_negated)
+    }
+}
 
 pub struct DecVar<F: PrimeField, const PREC: u32> {
     pub val: FpVar<F>,
