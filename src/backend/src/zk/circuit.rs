@@ -251,10 +251,87 @@ impl<F: PrimeField, const PREC: u32, const MAX_VERTICES: usize, const MAX_POLYGO
     }
 }
 
-impl<F: PrimeField, const PREC: u32, const MAX_VERTICES: usize, const MAX_POLYGON_HASHES: usize>
-    ConstraintSynthesizer<F> for PointInMapCircuit<F, PREC, MAX_VERTICES, MAX_POLYGON_HASHES>
+impl<
+    F: PrimeField + Absorb,
+    const PREC: u32,
+    const MAX_VERTICES: usize,
+    const MAX_POLYGON_HASHES: usize,
+> ConstraintSynthesizer<F> for PointInMapCircuit<F, PREC, MAX_VERTICES, MAX_POLYGON_HASHES>
 {
     fn generate_constraints(self, cs: ConstraintSystemRef<F>) -> Result<(), SynthesisError> {
+        use ark_r1cs_std::{alloc::AllocVar, prelude::*};
+
+        /* ────────── 1. allocate PRIVATE witnesses ────────── */
+
+        // point
+        let point_var = Point2DDecVar {
+            x: DecVar::new_witness(cs.clone(), || Ok(self.private_point.x))?,
+            y: DecVar::new_witness(cs.clone(), || Ok(self.private_point.y))?,
+        };
+
+        // polygon vertices
+        let poly_var: [Point2DDecVar<F, PREC>; MAX_VERTICES] = core::array::from_fn(|i| {
+            let v = self.private_polygon_vertices[i];
+            Point2DDecVar {
+                x: DecVar::new_witness(cs.clone(), || Ok(v.x)).unwrap(),
+                y: DecVar::new_witness(cs.clone(), || Ok(v.y)).unwrap(),
+            }
+        });
+
+        // num_vertices
+        let num_vert_var =
+            FpVar::<F>::new_witness(cs.clone(), || Ok(F::from(self.private_num_vertices)))?;
+
+        /* ────────── 2. allocate PUBLIC inputs ─────────────── */
+
+        // public boolean (0/1 as field element, then to Boolean)
+        let pub_flag_f = FpVar::<F>::new_input(cs.clone(), || {
+            Ok(if self.public_is_in_map {
+                F::one()
+            } else {
+                F::zero()
+            })
+        })?;
+
+        // public polygon-hash array
+        let pub_hash_vars: [FpVar<F>; MAX_POLYGON_HASHES] = core::array::from_fn(|i| {
+            FpVar::<F>::new_input(cs.clone(), || Ok(self.public_polygon_hashes[i])).unwrap()
+        });
+
+        /* ────────── 3. in-circuit computations ───────────── */
+
+        // 3a. point-in-polygon
+        let inside_b = is_point_in_polygon_gadget::<F, PREC, MAX_VERTICES>(
+            &point_var,
+            &poly_var,
+            &num_vert_var,
+        )?;
+
+        // 3b. polygon hash
+        let hash_var = hash_polygon_gadget::<F, PREC, MAX_VERTICES>(
+            &poly_var,
+            &num_vert_var,
+            &self.poseidon_config,
+        )?;
+
+        // 3c. hash matches any public hash?
+        let mut match_any = Boolean::constant(false);
+        for h in &pub_hash_vars {
+            let eq = hash_var.is_eq(h)?;
+            match_any = &match_any | &eq;
+        }
+
+        // 3d. computed “is-in-map” flag  = inside ∧ match_any
+        let in_map_b = &inside_b & &match_any;
+
+        /* 4. enforce public equality ------------------------------------- */
+        let one = FpVar::<F>::constant(F::one());
+        let zero = FpVar::<F>::zero();
+        let in_map_f = Boolean::select(&in_map_b, &one, &zero)?;
+
+        // constrain equality
+        pub_flag_f.enforce_equal(&in_map_f)?;
+
         Ok(())
     }
 }
