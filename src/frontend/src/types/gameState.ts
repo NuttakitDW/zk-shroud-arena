@@ -13,6 +13,11 @@ export interface Coordinates {
 export interface PlayerLocation extends Coordinates {
   timestamp: number;
   zone: string;
+  realWorldCoordinates?: {
+    latitude: number;
+    longitude: number;
+    altitude?: number;
+  };
 }
 
 export interface PlayerState {
@@ -46,6 +51,8 @@ export interface ArenaState {
     height: number;
   };
   dangerZones: SafeZone[];
+  h3Map: string[]; // H3 indices for valid arena zones
+  h3Resolution: number; // H3 resolution level
 }
 
 // Game phase management
@@ -54,10 +61,10 @@ export enum GamePhase {
   PREPARATION = 'preparation',
   ACTIVE = 'active',
   ZONE_SHRINKING = 'zone_shrinking',
-  SHRINKING = 'zone_shrinking', // Alias for backwards compatibility
+  SHRINKING = 'shrinking', // Alias for backwards compatibility
   FINAL_ZONE = 'final_zone',
   GAME_OVER = 'game_over',
-  ENDED = 'game_over' // Alias for backwards compatibility
+  ENDED = 'ended' // Alias for backwards compatibility
 }
 
 export interface GameTimer {
@@ -83,6 +90,11 @@ export interface ZKProofData {
   publicInputs: string[];
   timestamp: number;
   location: Coordinates;
+  realWorldLocation?: {
+    latitude: number;
+    longitude: number;
+    altitude?: number;
+  };
   hash: string;
 }
 
@@ -112,7 +124,7 @@ export type GameUpdateData =
   | ZKProofData
   | { playerId: string; reason: string }
   | GamePhase
-  | any; // Allow any type for flexibility with WebSocket messages
+  | unknown; // Allow unknown type for flexibility with WebSocket messages
 
 export interface GameUpdate {
   type: 'player_move' | 'zone_shrink' | 'proof_validation' | 'player_elimination' | 'game_phase';
@@ -150,7 +162,8 @@ export enum GameActionType {
   ADD_GAME_UPDATE = 'ADD_GAME_UPDATE',
   SET_CONNECTION_STATUS = 'SET_CONNECTION_STATUS',
   RESET_GAME_STATE = 'RESET_GAME_STATE',
-  HYDRATE_STATE = 'HYDRATE_STATE'
+  HYDRATE_STATE = 'HYDRATE_STATE',
+  UPDATE_H3_MAP = 'UPDATE_H3_MAP'
 }
 
 export type GameActionPayload = 
@@ -164,6 +177,7 @@ export type GameActionPayload =
   | string
   | GameStateSnapshot
   | GameState
+  | { h3Map: string[]; resolution: number }
   | null;
 
 export interface GameAction {

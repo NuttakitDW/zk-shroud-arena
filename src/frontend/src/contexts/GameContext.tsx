@@ -27,7 +27,8 @@ import {
   ZKProofValidatedMessage,
   ZKProofRequestMessage,
   SystemAnnouncementMessage,
-  WebSocketConnectionInfo
+  WebSocketConnectionInfo,
+  H3MapUpdateMessage
 } from '../types/websocket';
 
 // Initial state factory
@@ -60,6 +61,8 @@ const createInitialState = (gameId: string = 'default'): GameState => ({
       height: 2000,
     },
     dangerZones: [],
+    h3Map: [], // Initially empty, will be populated from server
+    h3Resolution: 9, // Default resolution
   },
   gamePhase: {
     phase: GamePhase.LOBBY,
@@ -103,7 +106,7 @@ const gameStateReducer = (state: GameState, action: GameAction): GameState => {
         playerState: {
           ...state.playerState,
           location: {
-            ...action.payload,
+            ...(action.payload as PlayerLocation),
             timestamp,
           },
           lastActivity: timestamp,
@@ -116,8 +119,8 @@ const gameStateReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         playerState: {
           ...state.playerState,
-          health: Math.max(0, Math.min(state.playerState.maxHealth, action.payload)),
-          isAlive: action.payload > 0,
+          health: Math.max(0, Math.min(state.playerState.maxHealth, action.payload as number)),
+          isAlive: (action.payload as number) > 0,
           lastActivity: timestamp,
         },
         lastUpdated: timestamp,
@@ -128,15 +131,15 @@ const gameStateReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         zkProofState: {
           ...state.zkProofState,
-          validationStatus: action.payload.status,
-          lastProof: action.payload.proof || state.zkProofState.lastProof,
-          errors: action.payload.status === ZKProofStatus.ERROR 
-            ? [...state.zkProofState.errors, action.payload.error]
+          validationStatus: (action.payload as { status: ZKProofStatus; proof?: ZKProofData; error?: string }).status,
+          lastProof: (action.payload as { status: ZKProofStatus; proof?: ZKProofData; error?: string }).proof || state.zkProofState.lastProof,
+          errors: (action.payload as { status: ZKProofStatus; proof?: ZKProofData; error?: string }).status === ZKProofStatus.ERROR 
+            ? [...state.zkProofState.errors, (action.payload as { status: ZKProofStatus; proof?: ZKProofData; error?: string }).error || 'Unknown error']
             : state.zkProofState.errors,
-          proofHistory: action.payload.proof 
-            ? [...state.zkProofState.proofHistory, action.payload.proof].slice(-10) // Keep last 10 proofs
+          proofHistory: (action.payload as { status: ZKProofStatus; proof?: ZKProofData; error?: string }).proof 
+            ? [...state.zkProofState.proofHistory, (action.payload as { status: ZKProofStatus; proof?: ZKProofData; error?: string }).proof!].slice(-10) // Keep last 10 proofs
             : state.zkProofState.proofHistory,
-          nextProofRequired: action.payload.proof 
+          nextProofRequired: (action.payload as { status: ZKProofStatus; proof?: ZKProofData; error?: string }).proof 
             ? timestamp + state.zkProofState.proofCooldown
             : state.zkProofState.nextProofRequired,
         },
@@ -148,7 +151,7 @@ const gameStateReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         arenaState: {
           ...state.arenaState,
-          currentZone: action.payload,
+          currentZone: action.payload as SafeZone,
           shrinkTimer: timestamp,
         },
         lastUpdated: timestamp,
@@ -160,17 +163,19 @@ const gameStateReducer = (state: GameState, action: GameAction): GameState => {
         [GamePhase.PREPARATION]: 30000,
         [GamePhase.ACTIVE]: 300000,
         [GamePhase.ZONE_SHRINKING]: 120000,
+        [GamePhase.SHRINKING]: 120000, // Alias
         [GamePhase.FINAL_ZONE]: 180000,
         [GamePhase.GAME_OVER]: 30000,
+        [GamePhase.ENDED]: 30000, // Alias
       };
       
-      const phaseDuration = phaseDurations[action.payload] || 60000;
+      const phaseDuration = phaseDurations[action.payload as GamePhase] || 60000;
       
       return {
         ...state,
         gamePhase: {
           ...state.gamePhase,
-          phase: action.payload,
+          phase: action.payload as GamePhase,
           timer: {
             ...state.gamePhase.timer,
             phaseStartTime: timestamp,
@@ -189,7 +194,7 @@ const gameStateReducer = (state: GameState, action: GameAction): GameState => {
           ...state.gamePhase,
           timer: {
             ...state.gamePhase.timer,
-            remainingTime: Math.max(0, action.payload),
+            remainingTime: Math.max(0, action.payload as number),
           },
         },
         lastUpdated: timestamp,
@@ -200,7 +205,7 @@ const gameStateReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         realtimeState: {
           ...state.realtimeState,
-          updates: [...state.realtimeState.updates, action.payload].slice(-50), // Keep last 50 updates
+          updates: [...state.realtimeState.updates, action.payload as GameUpdate].slice(-50), // Keep last 50 updates
           lastUpdate: timestamp,
         },
         lastUpdated: timestamp,
@@ -211,20 +216,32 @@ const gameStateReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         realtimeState: {
           ...state.realtimeState,
-          connectionStatus: action.payload.status,
-          latency: action.payload.latency || state.realtimeState.latency,
+          connectionStatus: (action.payload as { status: 'connected' | 'disconnected' | 'reconnecting'; latency?: number }).status,
+          latency: (action.payload as { status: 'connected' | 'disconnected' | 'reconnecting'; latency?: number }).latency || state.realtimeState.latency,
         },
         lastUpdated: timestamp,
       };
       
     case GameActionType.HYDRATE_STATE:
       return {
-        ...action.payload,
+        ...(action.payload as GameState),
         lastUpdated: timestamp,
       };
       
     case GameActionType.RESET_GAME_STATE:
       return createInitialState(state.gameId);
+      
+    case GameActionType.UPDATE_H3_MAP:
+      const { h3Map, resolution } = action.payload as { h3Map: string[]; resolution: number };
+      return {
+        ...state,
+        arenaState: {
+          ...state.arenaState,
+          h3Map,
+          h3Resolution: resolution,
+        },
+        lastUpdated: timestamp,
+      };
       
     default:
       return state;
@@ -436,6 +453,17 @@ export const GameContextProvider: React.FC<GameContextProviderProps> = ({
           timestamp: Date.now(),
           data
         } as GameUpdate
+      });
+    },
+    
+    onH3MapUpdate: (data: H3MapUpdateMessage) => {
+      console.log('📍 Received H3 map update from server:', data);
+      dispatch({
+        type: GameActionType.UPDATE_H3_MAP,
+        payload: {
+          h3Map: data.h3Map,
+          resolution: data.resolution
+        }
       });
     },
     
