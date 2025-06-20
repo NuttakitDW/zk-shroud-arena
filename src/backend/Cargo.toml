@@ -10,3 +10,8 @@ ark-ff = "0.5"
 ark-r1cs-std = "0.5"
 ark-relations = "0.5"
 rand = "0.9.1"
+actix-web = "4"
+h3o = "0.8.0"
+proj = "0.30.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
