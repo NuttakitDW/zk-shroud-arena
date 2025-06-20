@@ -10,7 +10,7 @@ use ark_r1cs_std::{
     boolean::Boolean,
     fields::{FieldVar, fp::FpVar},
 };
-use ark_relations::r1cs::SynthesisError;
+use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError};
 
 use crate::zk::{
     fixed_point_decimal::{Dec, DecVar},
@@ -209,6 +209,54 @@ pub fn hash_polygon_gadget<F: PrimeField + Absorb, const PREC: u32, const MAX_VE
     }
 
     Ok(sponge.squeeze_field_elements(1)?[0].clone())
+}
+
+pub struct PointInMapCircuit<
+    F: PrimeField,
+    const PREC: u32,
+    const MAX_VERTICES: usize,
+    const MAX_POLYGON_HASHES: usize,
+> {
+    pub private_point: Point2DDec<F, PREC>,
+    pub private_polygon_vertices: [Point2DDec<F, PREC>; MAX_VERTICES],
+    pub private_num_vertices: u64,
+
+    pub public_is_in_map: bool,
+    pub public_polygon_hashes: [F; MAX_POLYGON_HASHES],
+
+    pub poseidon_config: PoseidonConfig<F>,
+}
+
+impl<F: PrimeField, const PREC: u32, const MAX_VERTICES: usize, const MAX_POLYGON_HASHES: usize>
+    PointInMapCircuit<F, PREC, MAX_VERTICES, MAX_POLYGON_HASHES>
+{
+    pub fn new(
+        private_point: Point2DDec<F, PREC>,
+        private_polygon_vertices: [Point2DDec<F, PREC>; MAX_VERTICES],
+        private_num_vertices: u64,
+        public_is_in_map: bool,
+        public_polygon_hashes: [F; MAX_POLYGON_HASHES],
+        poseidon_config: PoseidonConfig<F>,
+    ) -> Self {
+        assert!(private_num_vertices as usize <= MAX_VERTICES);
+
+        Self {
+            private_point,
+            private_polygon_vertices,
+            private_num_vertices,
+            public_is_in_map,
+            public_polygon_hashes,
+            poseidon_config,
+        }
+    }
+}
+
+impl<F: PrimeField, const PREC: u32, const MAX_VERTICES: usize, const MAX_POLYGON_HASHES: usize>
+    ConstraintSynthesizer<F> for PointInMapCircuit<F, PREC, MAX_VERTICES, MAX_POLYGON_HASHES>
+{
+    fn generate_constraints(self, cs: ConstraintSystemRef<F>) -> Result<(), SynthesisError> {
+        Ok(())
+    }
 }
 
 #[cfg(test)]
