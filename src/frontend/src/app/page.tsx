@@ -163,7 +163,7 @@ export default function ZKShroudArena() {
                     <GameMap
                       players={[currentPlayer]}
                       arenaBounds={{ minX: 0, maxX: 1000, minY: 0, maxY: 1000 }}
-                      onPlayerMove={handlePlayerMove}
+                      onMapClick={handlePlayerMove}
                       className="w-full h-96 border border-gray-600 rounded"
                     />
                     <ArenaZone
@@ -173,6 +173,8 @@ export default function ZKShroudArena() {
                         coordinates: { x: 200, y: 200, width: 600, height: 600 },
                         type: 'safe'
                       }]}
+                      width={1000}
+                      height={1000}
                       className="absolute inset-0 pointer-events-none"
                     />
                   </div>
