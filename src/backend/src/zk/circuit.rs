@@ -1,5 +1,10 @@
+use std::cmp::Ordering;
+
 use ark_ff::PrimeField;
-use ark_r1cs_std::prelude::Boolean;
+use ark_r1cs_std::{
+    fields::{FieldVar, fp::FpVar},
+    prelude::Boolean,
+};
 use ark_relations::r1cs::SynthesisError;
 
 use crate::zk::{
@@ -85,4 +90,52 @@ pub fn is_point_in_polygon<F: PrimeField, const PREC: u32, const MAX_VERTICES: u
     }
 
     is_outside_count == 0
+}
+
+pub fn is_point_in_polygon_gadget<F: PrimeField, const PREC: u32, const MAX_VERTICES: usize>(
+    point: &Point2DDecVar<F, PREC>,
+    polygon: &[Point2DDecVar<F, PREC>; MAX_VERTICES],
+    num_vertices: &FpVar<F>,
+    epsilon: &DecVar<F, PREC>,
+) -> Result<Boolean<F>, SynthesisError> {
+    let zero_f = FpVar::<F>::zero();
+    let one_f = FpVar::<F>::constant(F::one());
+    let three_f = FpVar::<F>::constant(F::from(3u64));
+
+    let minus_one = DecVar {
+        val: one_f.clone(),
+        neg: Boolean::constant(true),
+    };
+    let neg_epsilon = epsilon.mul_unscaled(&minus_one)?;
+
+    let mut outside_count = zero_f.clone();
+
+    for i in 0..MAX_VERTICES {
+        let i_const = FpVar::<F>::constant(F::from(i as u64));
+        let active_i = i_const.is_cmp_unchecked(num_vertices, Ordering::Less, false)?; // Boolean
+
+        let current = &polygon[i];
+        let next = &polygon[(i + 1) % MAX_VERTICES];
+
+        let x2_x1 = next.x.sub(&current.x)?;
+        let py_y1 = point.y.sub(&current.y)?;
+        let y2_y1 = next.y.sub(&current.y)?;
+        let px_x1 = point.x.sub(&current.x)?;
+
+        let a = x2_x1.mul_unscaled(&py_y1)?;
+        let b = y2_y1.mul_unscaled(&px_x1)?;
+        let d_j = a.sub(&b)?;
+
+        let is_outside = comp_dec_less_than_gadget(&d_j, &neg_epsilon)?;
+        let inc_flag = active_i & is_outside;
+
+        let inc_val = Boolean::select(&inc_flag, &one_f, &zero_f)?;
+        outside_count = &outside_count + &inc_val;
+    }
+
+    let valid_n = num_vertices.is_cmp_unchecked(&three_f, Ordering::Greater, false)?; // num_vertices ≥ 3
+    let outside_zero = outside_count.is_zero()?;
+    let inside = valid_n & outside_zero;
+
+    Ok(inside)
 }
