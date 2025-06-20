@@ -15,6 +15,18 @@ pub struct Dec<F: PrimeField, const PREC: u32> {
 }
 
 impl<F: PrimeField, const PREC: u32> Dec<F, PREC> {
+    pub const SCALE: u128 = 10u128.pow(PREC);
+
+    pub fn from_f64(x: f64) -> Self {
+        let neg = x.is_sign_negative();
+        let val = (x.abs() * Self::SCALE as f64).round() as u128;
+
+        Self {
+            val: F::from(val),
+            neg: neg,
+        }
+    }
+
     fn signed_add_u128(a_neg: bool, a_mag: u128, b_neg: bool, b_mag: u128) -> (bool, u128) {
         if a_neg == b_neg {
             (a_neg, a_mag.saturating_add(b_mag))

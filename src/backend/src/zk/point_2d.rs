@@ -1,3 +1,5 @@
+use ark_ff::PrimeField;
+
 use crate::zk::fixed_point_decimal::{Dec, DecVar};
 
 pub struct Point2D {
