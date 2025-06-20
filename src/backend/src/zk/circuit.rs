@@ -58,65 +58,63 @@ pub fn is_point_in_polygon<F: PrimeField, const PREC: u32, const MAX_VERTICES: u
     point: &Point2DDec<F, PREC>,
     polygon: &[Point2DDec<F, PREC>; MAX_VERTICES],
     num_vertices: usize,
-    epsilon: Dec<F, PREC>,
 ) -> bool {
     if num_vertices < 3 {
         return false;
     }
 
-    let mut is_outside_count = 0;
-    let neg_epsilon = epsilon.mul_unscaled(Dec {
-        val: F::one(),
-        neg: true,
-    });
+    let mut outside_count = 0;
+    let zero_dec = Dec::<F, PREC> {
+        val: F::zero(),
+        neg: false,
+    };
 
     for i in 0..num_vertices {
         let current = &polygon[i];
         let next = &polygon[(i + 1) % num_vertices];
 
-        // d_j = (x2 - x1) * (py - y1) - (y2 - y1) * (px - x1)
-        let x2_minus_x1 = next.x.sub(current.x);
-        let py_minus_y1 = point.y.sub(current.y);
-        let y2_minus_y1 = next.y.sub(current.y);
-        let px_minus_x1 = point.x.sub(current.x);
+        // d_j = (x2-x1)*(py-y1) − (y2-y1)*(px-x1)
+        let x2_x1 = next.x.sub(current.x);
+        let py_y1 = point.y.sub(current.y);
+        let y2_y1 = next.y.sub(current.y);
+        let px_x1 = point.x.sub(current.x);
 
-        let a = x2_minus_x1.mul_unscaled(py_minus_y1);
-        let b = y2_minus_y1.mul_unscaled(px_minus_x1);
+        let a = x2_x1.mul_unscaled(py_y1);
+        let b = y2_y1.mul_unscaled(px_x1);
         let d_j = a.sub(b);
 
-        if comp_dec_less_than(&d_j, &neg_epsilon) {
-            is_outside_count += 1;
+        if comp_dec_less_than(&d_j, &zero_dec) {
+            outside_count += 1;
         }
     }
 
-    is_outside_count == 0
+    outside_count == 0
 }
 
 pub fn is_point_in_polygon_gadget<F: PrimeField, const PREC: u32, const MAX_VERTICES: usize>(
     point: &Point2DDecVar<F, PREC>,
     polygon: &[Point2DDecVar<F, PREC>; MAX_VERTICES],
     num_vertices: &FpVar<F>,
-    epsilon: &DecVar<F, PREC>,
 ) -> Result<Boolean<F>, SynthesisError> {
     let zero_f = FpVar::<F>::zero();
     let one_f = FpVar::<F>::constant(F::one());
     let three_f = FpVar::<F>::constant(F::from(3u64));
 
-    let minus_one = DecVar {
-        val: one_f.clone(),
-        neg: Boolean::constant(true),
+    let zero_dec = DecVar::<F, PREC> {
+        val: zero_f.clone(),
+        neg: Boolean::constant(false),
     };
-    let neg_epsilon = epsilon.mul_unscaled(&minus_one)?;
 
     let mut outside_count = zero_f.clone();
 
     for i in 0..MAX_VERTICES {
         let i_const = FpVar::<F>::constant(F::from(i as u64));
-        let active_i = i_const.is_cmp_unchecked(num_vertices, Ordering::Less, false)?; // Boolean
+        let active_i = i_const.is_cmp_unchecked(num_vertices, Ordering::Less, false)?;
 
         let current = &polygon[i];
         let next = &polygon[(i + 1) % MAX_VERTICES];
 
+        // d_j = (x2-x1)*(py-y1) − (y2-y1)*(px-x1)
         let x2_x1 = next.x.sub(&current.x)?;
         let py_y1 = point.y.sub(&current.y)?;
         let y2_y1 = next.y.sub(&current.y)?;
@@ -126,16 +124,14 @@ pub fn is_point_in_polygon_gadget<F: PrimeField, const PREC: u32, const MAX_VERT
         let b = y2_y1.mul_unscaled(&px_x1)?;
         let d_j = a.sub(&b)?;
 
-        let is_outside = comp_dec_less_than_gadget(&d_j, &neg_epsilon)?;
+        let is_outside = comp_dec_less_than_gadget(&d_j, &zero_dec)?;
         let inc_flag = active_i & is_outside;
 
         let inc_val = Boolean::select(&inc_flag, &one_f, &zero_f)?;
         outside_count = &outside_count + &inc_val;
     }
 
-    let valid_n = num_vertices.is_cmp_unchecked(&three_f, Ordering::Greater, false)?; // num_vertices ≥ 3
+    let valid_n = num_vertices.is_cmp_unchecked(&three_f, Ordering::Greater, false)?;
     let outside_zero = outside_count.is_zero()?;
-    let inside = valid_n & outside_zero;
-
-    Ok(inside)
+    Ok(valid_n & outside_zero)
 }
