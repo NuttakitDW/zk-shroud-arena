@@ -1,10 +1,10 @@
-use std::borrow::Borrow;
+use std::{borrow::Borrow, iter::FilterMap};
 
 use ark_ff::PrimeField;
 use ark_r1cs_std::{
     alloc::{AllocVar, AllocationMode},
     fields::{FieldVar, fp::FpVar},
-    prelude::Boolean,
+    prelude::{Boolean, ToBitsGadget},
 };
 use ark_relations::r1cs::{Namespace, SynthesisError};
 
@@ -105,4 +105,22 @@ impl<F: PrimeField, const PREC: u32> AllocVar<Dec<F, PREC>, F> for DecVar<F, PRE
     }
 }
 
-impl<F: PrimeField, const PREC: u32> DecVar<F, PREC> {}
+impl<F: PrimeField, const PREC: u32> DecVar<F, PREC> {
+    pub fn add(&self, rhs: &Self) -> Result<Self, SynthesisError> {
+        let s1 = Boolean::select(&self.neg, &cst(false), &cst(true))?;
+        let s2 = Boolean::select(&rhs.neg, &cst(false), &cst(true))?;
+
+        let sum_val = self.val.clone() * s1 + rhs.val.clone() * s2;
+        let sum_bits = sum_val.to_bits_le()?;
+        let final_sign_bit = sum_bits
+            .last()
+            .cloned()
+            .ok_or(SynthesisError::Unsatisfiable)?;
+        let negated_sum_val = sum_val.negate()?;
+        let abs_mag = Boolean::select(&final_sign_bit, &negated_sum_val, &sum_val)?;
+        Ok(Self {
+            val: abs_mag,
+            neg: final_sign_bit,
+        })
+    }
+}
