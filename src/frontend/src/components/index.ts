@@ -32,6 +32,12 @@ export {
   MapDemo,
 } from './examples';
 
+export {
+  BattleArena,
+  // Note: RealWorldArena excluded from exports to prevent SSR issues with Leaflet
+  // Import RealWorldArena directly where needed using dynamic imports
+} from './arena';
+
 export type {
   Position,
   ArenaBounds,

@@ -2,6 +2,8 @@
 export { GameMap } from './GameMap';
 export { ArenaZone } from './ArenaZone';
 export { PlayerIndicator } from './PlayerIndicator';
+// Note: RealWorldMap is excluded from exports to prevent SSR issues with Leaflet
+// Import RealWorldMap directly where needed using dynamic imports
 
 // Types exports
 export type {
