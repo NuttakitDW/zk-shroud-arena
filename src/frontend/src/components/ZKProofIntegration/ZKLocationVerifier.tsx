@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useLocationProof, LocationVerificationState } from '../../hooks/useLocationProof';
+import { useLocationProof } from '../../hooks/useLocationProof';
 import { useGameState } from '../../hooks/useGameState';
 import { LocationCoordinates, ZkProof } from '../../types/zkProof';
 import { GamePhase, ZKProofStatus } from '../../types/gameState';
@@ -12,7 +12,7 @@ export interface ZKLocationVerifierProps {
   currentLocation: PrivacyLocation | null;
   realLocation?: LocationCoordinates; // For ZK proof generation
   onProofValidated?: (proof: ZkProof, valid: boolean) => void;
-  onAntiCheatAlert?: (alertType: string, details: any) => void;
+  onAntiCheatAlert?: (alertType: string, details: unknown) => void;
   className?: string;
   showDetails?: boolean;
   enableRealTimeVerification?: boolean;
@@ -27,7 +27,6 @@ export interface ProofSubmissionResult {
 }
 
 export const ZKLocationVerifier: React.FC<ZKLocationVerifierProps> = ({
-  gameId,
   currentLocation,
   realLocation,
   onProofValidated,
@@ -36,7 +35,7 @@ export const ZKLocationVerifier: React.FC<ZKLocationVerifierProps> = ({
   showDetails = true,
   enableRealTimeVerification = true
 }) => {
-  const { gameState, updateZKProofStatus, recordLocationProof } = useGameState();
+  const { state: gameState, actions: { updateProofStatus } } = useGameState();
   const [verificationStats, setVerificationStats] = useState({
     totalProofs: 0,
     validProofs: 0,
@@ -49,7 +48,6 @@ export const ZKLocationVerifier: React.FC<ZKLocationVerifierProps> = ({
     state: locationProofState,
     generateLocationProof,
     verifyLocationProof,
-    validatePlayerMovement,
     getPlayerTrustScore,
     getMovementMetrics,
     isLocationReasonable
@@ -59,8 +57,9 @@ export const ZKLocationVerifier: React.FC<ZKLocationVerifierProps> = ({
     maxMovementSpeed: 15, // Running speed in m/s
     enableAntiCheat: true,
     onProofGenerated: (proof) => {
-      recordLocationProof(proof);
-      updateZKProofStatus(ZKProofStatus.VALID);
+      // Store proof in state - recordLocationProof not available
+      console.log('Proof generated:', proof);
+      updateProofStatus(ZKProofStatus.VALID);
     },
     onVerificationComplete: (verification) => {
       setVerificationStats(prev => ({
@@ -98,12 +97,12 @@ export const ZKLocationVerifier: React.FC<ZKLocationVerifierProps> = ({
     }
 
     const startTime = Date.now();
-    updateZKProofStatus(ZKProofStatus.GENERATING);
+    updateProofStatus(ZKProofStatus.GENERATING);
 
     try {
       // Check if location is reasonable
       if (!isLocationReasonable(realLocation)) {
-        updateZKProofStatus(ZKProofStatus.INVALID);
+        updateProofStatus(ZKProofStatus.INVALID);
         return {
           success: false,
           trustScore: getPlayerTrustScore(),
@@ -119,7 +118,7 @@ export const ZKLocationVerifier: React.FC<ZKLocationVerifierProps> = ({
       );
 
       if (!proofResult.success) {
-        updateZKProofStatus(ZKProofStatus.INVALID);
+        updateProofStatus(ZKProofStatus.INVALID);
         return {
           success: false,
           trustScore: getPlayerTrustScore(),
@@ -133,7 +132,7 @@ export const ZKLocationVerifier: React.FC<ZKLocationVerifierProps> = ({
       const verificationTime = Date.now() - startTime;
       
       if (verifyResult.success && verifyResult.data.valid) {
-        updateZKProofStatus(ZKProofStatus.VALID);
+        updateProofStatus(ZKProofStatus.VALID);
         return {
           success: true,
           proof: proofResult.data,
@@ -142,7 +141,7 @@ export const ZKLocationVerifier: React.FC<ZKLocationVerifierProps> = ({
           verificationTime
         };
       } else {
-        updateZKProofStatus(ZKProofStatus.INVALID);
+        updateProofStatus(ZKProofStatus.INVALID);
         return {
           success: false,
           proof: proofResult.data,
@@ -151,8 +150,8 @@ export const ZKLocationVerifier: React.FC<ZKLocationVerifierProps> = ({
           verificationTime
         };
       }
-    } catch (error) {
-      updateZKProofStatus(ZKProofStatus.INVALID);
+    } catch {
+      updateProofStatus(ZKProofStatus.INVALID);
       return {
         success: false,
         trustScore: getPlayerTrustScore(),
@@ -161,7 +160,7 @@ export const ZKLocationVerifier: React.FC<ZKLocationVerifierProps> = ({
       };
     }
   }, [realLocation, currentLocation, generateLocationProof, verifyLocationProof, 
-      getPlayerTrustScore, isLocationReasonable, updateZKProofStatus]);
+      getPlayerTrustScore, isLocationReasonable, updateProofStatus]);
 
   // Auto-submit proofs during active game phases
   useEffect(() => {

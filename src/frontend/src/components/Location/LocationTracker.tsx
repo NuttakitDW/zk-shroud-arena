@@ -366,7 +366,7 @@ export const LocationTracker: React.FC<LocationTrackerProps> = ({
         
         {status === 'permission-denied' && (
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => typeof window !== 'undefined' && window.location.reload()}
             className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded font-medium transition-colors"
           >
             Reload Page
