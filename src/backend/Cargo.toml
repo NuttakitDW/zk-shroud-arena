@@ -8,3 +8,5 @@ ark-ff = "0.5"
 ark-r1cs-std = "0.5"
 ark-relations = "0.5"
 ark-crypto-primitives = { version = "0.5", features = ["crh", "r1cs"] }
+rand = "0.9.1"
+ark-bn254 = "0.5"

@@ -7,6 +7,7 @@ pub struct Point2D {
     pub y: f64,
 }
 
+#[derive(Clone, Copy)]
 pub struct Point2DDec<F: PrimeField, const PREC: u32> {
     pub x: Dec<F, PREC>,
     pub y: Dec<F, PREC>,

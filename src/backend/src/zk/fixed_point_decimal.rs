@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, iter::FilterMap};
+use std::borrow::Borrow;
 
 use ark_ff::PrimeField;
 use ark_r1cs_std::{

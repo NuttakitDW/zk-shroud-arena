@@ -210,3 +210,115 @@ pub fn hash_polygon_gadget<F: PrimeField + Absorb, const PREC: u32, const MAX_VE
 
     Ok(sponge.squeeze_field_elements(1)?[0].clone())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ---------- field & Poseidon config ----------
+    use ark_bn254::Fr;
+    use ark_crypto_primitives::sponge::poseidon::find_poseidon_ark_and_mds;
+
+    // ---------- gadgets / R1CS ----------
+    use ark_r1cs_std::{R1CSVar, alloc::AllocVar};
+    use ark_relations::r1cs::ConstraintSystem;
+
+    // ---------- rand 0.9 (no deprecated names) ----------
+    use rand::{Rng, rng, rngs::ThreadRng};
+
+    type F = Fr;
+    const MAX: usize = CIRCUIT_MAX_VERTICES;
+    const PREC: u32 = CIRCUIT_PRECISION;
+
+    // Poseidon parameters: width 3, α = 17, 8 full + 31 partial rounds
+    fn poseidon_cfg() -> PoseidonConfig<Fr> {
+        let (ark, mds) = find_poseidon_ark_and_mds::<Fr>(Fr::MODULUS_BIT_SIZE as u64, 3, 8, 31, 0);
+
+        PoseidonConfig {
+            full_rounds: 8,
+            partial_rounds: 31,
+            alpha: 17,
+            ark,
+            mds,
+            rate: 2,
+            capacity: 1,
+        }
+    }
+
+    // ------- helper: random convex-ish polygon -----------------
+    fn random_polygon(rng: &mut ThreadRng, n: usize) -> [Point2DDec<F, PREC>; MAX] {
+        debug_assert!(n <= MAX);
+        let mut arr = core::array::from_fn(|_| Point2DDec::from_f64(0.0, 0.0));
+        for i in 0..n {
+            let x = rng.random_range(-100.0..100.0);
+            let y = rng.random_range(-100.0..100.0);
+            arr[i] = Point2DDec::from_f64(x, y);
+        }
+        arr
+    }
+
+    // ------- helper: allocate polygon var ----------------------
+    fn alloc_polygon_var<const P: u32>(
+        cs: ark_relations::r1cs::ConstraintSystemRef<F>,
+        poly: &[Point2DDec<F, P>; MAX],
+    ) -> [Point2DDecVar<F, P>; MAX] {
+        core::array::from_fn(|i| {
+            let p = &poly[i];
+            Point2DDecVar {
+                x: DecVar::new_witness(cs.clone(), || Ok(p.x)).unwrap(),
+                y: DecVar::new_witness(cs.clone(), || Ok(p.y)).unwrap(),
+            }
+        })
+    }
+
+    // ------- helper: allocate single point var -----------------
+    fn alloc_point_var<const P: u32>(
+        cs: ark_relations::r1cs::ConstraintSystemRef<F>,
+        p: &Point2DDec<F, P>,
+    ) -> Point2DDecVar<F, P> {
+        Point2DDecVar {
+            x: DecVar::new_witness(cs.clone(), || Ok(p.x)).unwrap(),
+            y: DecVar::new_witness(cs, || Ok(p.y)).unwrap(),
+        }
+    }
+
+    // --------------- round-trip test ----------------------------
+    #[test]
+    fn helpers_match_bn254() {
+        let mut rng: ThreadRng = rng();
+        let cfg = poseidon_cfg();
+
+        for _ in 0..8 {
+            // random vertex count 3‥=MAX
+            let n = rng.random_range(3..=MAX);
+            let poly = random_polygon(&mut rng, n);
+
+            let point = {
+                let x = rng.random_range(-50.0..50.0);
+                let y = rng.random_range(-50.0..50.0);
+                Point2DDec::from_f64(x, y)
+            };
+
+            // ---------- native ----------
+            let inside_native = is_point_in_polygon::<F, PREC, MAX>(&point, &poly, n);
+            let hash_native = hash_polygon::<F, PREC, MAX>(&poly, n, &cfg);
+
+            // ---------- gadget ----------
+            let cs = ConstraintSystem::<F>::new_ref();
+
+            let n_var = FpVar::<F>::new_witness(cs.clone(), || Ok(F::from(n as u64))).unwrap();
+            let poly_var = alloc_polygon_var::<PREC>(cs.clone(), &poly);
+            let point_var = alloc_point_var::<PREC>(cs.clone(), &point);
+
+            let inside_gadget =
+                is_point_in_polygon_gadget::<F, PREC, MAX>(&point_var, &poly_var, &n_var).unwrap();
+
+            let hash_gadget = hash_polygon_gadget::<F, PREC, MAX>(&poly_var, &n_var, &cfg).unwrap();
+
+            // compare
+            assert_eq!(inside_native, inside_gadget.value().unwrap());
+            assert_eq!(hash_native, hash_gadget.value().unwrap());
+            assert!(cs.is_satisfied().unwrap());
+        }
+    }
+}
