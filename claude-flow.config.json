@@ -1,5 +1,5 @@
 {
-  "maxAgents": 4,
+  "maxAgents": 2,
   "defaultStrategy": "development",
   "defaultMode": "hierarchical",
   "enableParallel": true,
@@ -67,10 +67,16 @@
     "memorySharing": true
   },
   "performance": {
-    "concurrentTasks": 4,
-    "timeoutMs": 300000,
-    "retryAttempts": 2,
-    "cachingEnabled": true
+    "concurrentTasks": 2,
+    "timeoutMs": 180000,
+    "retryAttempts": 1,
+    "cachingEnabled": true,
+    "testOptimizations": {
+      "skipCoverageByDefault": true,
+      "useParallelWorkers": true,
+      "bailOnFirstFailure": false,
+      "preferFastTests": true
+    }
   },
   "ui": {
     "enabled": true,
@@ -80,6 +86,19 @@
   "memory": {
     "persistentStorage": true,
     "maxEntries": 1000,
-    "cleanupInterval": "24h"
+    "cleanupInterval": "24h",
+    "maxMemoryPerAgent": "2GB",
+    "totalMaxMemory": "6GB",
+    "enableGarbageCollection": true,
+    "gcInterval": "5m",
+    "killAgentOnMemoryExceed": true,
+    "memoryWarningThreshold": "80%"
+  },
+  "resourceLimits": {
+    "maxConcurrentAgents": 2,
+    "staggeredStartDelay": 5000,
+    "enableMemoryMonitoring": true,
+    "autoKillHighMemoryProcesses": true,
+    "memoryCheckInterval": 30000
   }
 }

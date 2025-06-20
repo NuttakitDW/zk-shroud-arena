@@ -1,6 +1,6 @@
 # ZK Hack 2025 Project Makefile
 
-.PHONY: dev build test clean install tail-logs help backend frontend
+.PHONY: dev build test test-fast clean install tail-logs help backend frontend
 
 # Default target
 help:
@@ -10,6 +10,10 @@ help:
 	@echo "  make frontend   - Start only the Next.js frontend"
 	@echo "  make build      - Build both backend and frontend"
 	@echo "  make test       - Run all tests"
+	@echo "  make test-fast     - Run fast frontend tests (no coverage, bail on failure)
+	@echo "  make test-speed    - Run speed-optimized tests (silent, max performance)"
+	@echo "  make test-parallel - Run tests with maximum parallelization"
+	@echo "  make test-single   - Run tests single-threaded for debugging""
 	@echo "  make install    - Install all dependencies"
 	@echo "  make tail-logs  - Tail application logs"
 	@echo "  make clean      - Clean build artifacts"
@@ -58,6 +62,22 @@ test-backend:
 test-frontend:
 	@echo "⚛️  Running Next.js tests..."
 	@cd src/frontend && npm test
+
+test-fast:
+	@echo "⚡ Running fast frontend tests..."
+	@cd src/frontend && npm run test:fast
+
+test-speed:
+	@echo "🏃 Running speed-optimized tests..."
+	@cd src/frontend && npm run test:speed
+
+test-parallel:
+	@echo "🚀 Running parallel tests..."
+	@cd src/frontend && npm run test:parallel
+
+test-single:
+	@echo "🎯 Running single-threaded tests..."
+	@cd src/frontend && npm run test:single
 
 # Dependencies
 install:
