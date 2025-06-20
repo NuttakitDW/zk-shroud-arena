@@ -114,6 +114,24 @@ test: add unit tests for user service
 - Modifying global Git configuration
 - Installing global packages without explicit permission
 
+### Frontend Focus Mode
+
+**CRITICAL: Claude must ONLY work with frontend files:**
+
+✅ **FRONTEND ONLY:**
+- Files under `src/frontend/` directory
+- Frontend-related configuration files (`package.json`, `next.config.ts`, `tailwind.config.js`)
+- Frontend tests under `tests/frontend/`
+- Frontend-specific documentation
+
+❌ **STRICTLY FORBIDDEN:**
+- Any files in `src/backend/` directory
+- Backend configuration files (`Cargo.toml`, `src/backend/config/`)
+- Backend tests under `tests/backend/`
+- Backend-related API development
+- Rust code modifications
+- Backend service implementations
+
 ### Code Quality Standards
 
 - **Rust**: Follow standard Rust conventions, use `cargo fmt` and `cargo clippy`
@@ -144,6 +162,128 @@ test: add unit tests for user service
 - **Backend config**: `src/backend/config/`
 - **Frontend config**: `next.config.ts`, `tailwind.config.js`
 - **Development**: Environment variables in `.env.local`
+
+## 🔌 API Documentation
+
+### Available Backend Server
+
+A temporary backend server is running at `http://localhost:8080` with the following endpoints:
+
+#### Setup (macOS)
+
+1. **Install dependencies**
+```bash
+brew install cmake pkgconf
+```
+
+2. **Build the project**
+```bash
+cargo build --release
+```
+
+3. **Run the backend**
+```bash
+./target/release/backend
+```
+
+#### Setup (Ubuntu)
+
+1. **Install dependencies**
+```bash
+apt install build-essential cmake pkg-config libsqlite3-dev sqlite3
+```
+
+2. **Build the project**
+```bash
+cargo build --release
+```
+
+3. **Run the backend**
+```bash
+./target/release/backend
+```
+
+### API Endpoints
+
+#### Prove
+`POST /prove`
+
+**Request Body:**
+```json
+{
+  "lat": 40.689247,
+  "lon": -74.044502,
+  "resolution": 10,
+  "h3_map": [
+    "8a2a1072b5affff",
+    "8a2a1072b51ffff",
+    "8a2a1072b50ffff"
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "proof": {
+    "a": "RefqUj58Pc0cZnxIMtP1LpGBfg1laa7wEM1U2LUtQxxGyNA9exnouk6HuYkKvy6JFOGjwDFycQ8ah3xgaMtbDw==",
+    "b": "0f7MWKAiziNl0OlG033MY7l637et4H6o6+a9YAIq9CBZ0KUXwp2isNFfUo7hHkvc7lRJzef+HF2CVzqrKSZuAt/diotNZsy+FoGirPYLuSVLevvIQV9ZKTqOaBAKHusAQh34EhsV5UC7L+dYxuu8gFDBaSLN5MqQOmdCNB39jAE=",
+    "c": "KOTXK6+628Iam7b1dbPR+p17e/8Mz17cUtjzjGKdJiimB+58TjZlkyiMWYI+j2Q2sRjIwSw3/C6NcAQrsKwGFw=="
+  },
+  "public_inputs": [
+    "gNHwCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "4vEpFmxeY/ONNjSAQm8tOyCq0M2Z4MhQGpmWT2060Bc=",
+    "J3mtmdI9u1p21NzGWwjVOMWEFac24KFDm5kK+pbgPAA=",
+    "U8+fmMpbWCFe6NZ3Pf/6TwJGqB3EbPxQsqdVcNdEABA=",
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+  ]
+}
+```
+
+#### Verify
+`POST /verify`
+
+**Request Body:**
+```json
+{
+  "proof": {
+    "a": "RefqUj58Pc0cZnxIMtP1LpGBfg1laa7wEM1U2LUtQxxGyNA9exnouk6HuYkKvy6JFOGjwDFycQ8ah3xgaMtbDw==",
+    "b": "0f7MWKAiziNl0OlG033MY7l637et4H6o6+a9YAIq9CBZ0KUXwp2isNFfUo7hHkvc7lRJzef+HF2CVzqrKSZuAt/diotNZsy+FoGirPYLuSVLevvIQV9ZKTqOaBAKHusAQh34EhsV5UC7L+dYxuu8gFDBaSLN5MqQOmdCNB39jAE=",
+    "c": "KOTXK6+628Iam7b1dbPR+p17e/8Mz17cUtjzjGKdJiimB+58TjZlkyiMWYI+j2Q2sRjIwSw3/C6NcAQrsKwGFw=="
+  },
+  "public_inputs": [
+    "gNHwCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "4vEpFmxeY/ONNjSAQm8tOyCq0M2Z4MhQGpmWT2060Bc=",
+    "J3mtmdI9u1p21NzGWwjVOMWEFac24KFDm5kK+pbgPAA=",
+    "U8+fmMpbWCFe6NZ3Pf/6TwJGqB3EbPxQsqdVcNdEABA=",
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "ok": true
+}
+```
+or
+```json
+{
+  "ok": false
+}
+```
+
+### Environment Configuration
+
+Use `.env.local` in the frontend directory to configure the API endpoint:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8080
+```
 
 ## 📝 Notes
 
