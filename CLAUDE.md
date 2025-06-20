@@ -1,290 +1,290 @@
-# ZK Hack 2025 Project
+# Claude Code Configuration
 
-A monolith application with Rust backend and Next.js frontend for ZK Hack 2025.
+## Build Commands
+- `cd src/frontend && npm run dev`: Start frontend development server on port 3001
+- `cd src/frontend && npm run build`: Build the project
+- `cd src/frontend && npm run test`: Run the full test suite
+- `cd src/frontend && npm run lint`: Run ESLint and format checks
+- `cd src/frontend && npm run typecheck`: Run TypeScript type checking
+- `./claude-flow --help`: Show all available commands
 
-## 🏗️ Project Structure
+## 🚨 CRITICAL PROJECT CONSTRAINTS 🚨
 
+### FRONTEND-ONLY DEVELOPMENT POLICY
+**⚠️ STRICTLY ENFORCED RULES:**
+
+1. **DO NOT TOUCH BACKEND CODE**
+   - ❌ NEVER modify files in `src/backend/`
+   - ❌ NEVER edit `Cargo.toml` or any `.rs` files
+   - ❌ NEVER change backend configuration
+   - ❌ NEVER run cargo commands
+
+2. **BACKEND IS RUNNING AT localhost:8080**
+   - ✅ Backend server is already running at `http://localhost:8080`
+   - ✅ API endpoints available:
+     - `POST http://localhost:8080/prove` - ZK proof generation
+     - `POST http://localhost:8080/verify` - ZK proof verification
+   - ✅ Use these endpoints in frontend code
+
+3. **FRONTEND-ONLY WORK AREAS**
+   - ✅ Work ONLY in `src/frontend/` directory
+   - ✅ Modify React/Next.js components (.tsx, .ts, .jsx, .js)
+   - ✅ Update styles (.css, .scss)
+   - ✅ Edit frontend configuration (package.json, next.config.ts, etc.)
+   - ✅ Create frontend documentation
+   - ✅ Frontend runs on port 3001 (to avoid conflicts with claude-flow on port 3000)
+
+4. **API INTEGRATION PATTERN**
+   ```typescript
+   // ✅ CORRECT: Frontend API calls to backend
+   const response = await fetch('http://localhost:8080/prove', {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify(proofData)
+   });
+   ```
+
+5. **AGENT BEHAVIOR**
+   - All 4 agents (dev, docs, design, research) focus ONLY on frontend
+   - Backend is a black box - consume its APIs but never modify it
+   - Report any backend-related issues to user, don't try to fix them
+
+**These rules apply to ALL agents and ALL operations. No exceptions.**
+
+## Claude-Flow Complete Command Reference
+
+### Core System Commands
+- `./claude-flow start [--ui] [--port 3000] [--host localhost]`: Start orchestration system with optional web UI
+- `./claude-flow status`: Show comprehensive system status
+- `./claude-flow monitor`: Real-time system monitoring dashboard
+- `./claude-flow config <subcommand>`: Configuration management (show, get, set, init, validate)
+
+### Agent Management
+- `./claude-flow agent spawn <type> [--name <name>]`: Create AI agents (researcher, coder, analyst, etc.)
+- `./claude-flow agent list`: List all active agents
+- `./claude-flow spawn <type>`: Quick agent spawning (alias for agent spawn)
+
+### Task Orchestration
+- `./claude-flow task create <type> [description]`: Create and manage tasks
+- `./claude-flow task list`: View active task queue
+- `./claude-flow workflow <file>`: Execute workflow automation files
+
+### Memory Management
+- `./claude-flow memory store <key> <data>`: Store persistent data across sessions
+- `./claude-flow memory get <key>`: Retrieve stored information
+- `./claude-flow memory list`: List all memory keys
+- `./claude-flow memory export <file>`: Export memory to file
+- `./claude-flow memory import <file>`: Import memory from file
+- `./claude-flow memory stats`: Memory usage statistics
+- `./claude-flow memory cleanup`: Clean unused memory entries
+
+### SPARC Development Modes
+- `./claude-flow sparc "<task>"`: Run orchestrator mode (default)
+- `./claude-flow sparc run <mode> "<task>"`: Run specific SPARC mode
+- `./claude-flow sparc tdd "<feature>"`: Test-driven development mode
+- `./claude-flow sparc modes`: List all 17 available SPARC modes
+
+Available SPARC modes: orchestrator, coder, researcher, tdd, architect, reviewer, debugger, tester, analyzer, optimizer, documenter, designer, innovator, swarm-coordinator, memory-manager, batch-executor, workflow-manager
+
+### Swarm Coordination
+- `./claude-flow swarm "<objective>" [options]`: Multi-agent swarm coordination
+- `--strategy`: research, development, analysis, testing, optimization, maintenance
+- `--mode`: centralized, distributed, hierarchical, mesh, hybrid
+- `--max-agents <n>`: Maximum number of agents (default: 5)
+- `--parallel`: Enable parallel execution
+- `--monitor`: Real-time monitoring
+- `--output <format>`: json, sqlite, csv, html
+
+### MCP Server Integration
+- `./claude-flow mcp start [--port 3000] [--host localhost]`: Start MCP server
+- `./claude-flow mcp status`: Show MCP server status
+- `./claude-flow mcp tools`: List available MCP tools
+
+### Claude Integration
+- `./claude-flow claude auth`: Authenticate with Claude API
+- `./claude-flow claude models`: List available Claude models
+- `./claude-flow claude chat`: Interactive chat mode
+
+### Session Management
+- `./claude-flow session`: Manage terminal sessions
+- `./claude-flow repl`: Start interactive REPL mode
+
+### Enterprise Features
+- `./claude-flow project <subcommand>`: Project management (Enterprise)
+- `./claude-flow deploy <subcommand>`: Deployment operations (Enterprise)
+- `./claude-flow cloud <subcommand>`: Cloud infrastructure management (Enterprise)
+- `./claude-flow security <subcommand>`: Security and compliance tools (Enterprise)
+- `./claude-flow analytics <subcommand>`: Analytics and insights (Enterprise)
+
+### Project Initialization
+- `./claude-flow init`: Initialize Claude-Flow project
+- `./claude-flow init --sparc`: Initialize with full SPARC development environment
+
+## Quick Start Workflows
+
+### Research Workflow
+```bash
+# Start a research swarm with distributed coordination
+./claude-flow swarm "Research modern web frameworks" --strategy research --mode distributed --parallel --monitor
+
+# Or use SPARC researcher mode for focused research
+./claude-flow sparc run researcher "Analyze React vs Vue vs Angular performance characteristics"
+
+# Store findings in memory for later use
+./claude-flow memory store "research_findings" "Key insights from framework analysis"
 ```
-zkth-zkhack2025/
-├── src/
-│   ├── backend/                 # Rust backend
-│   │   ├── src/
-│   │   │   └── main.rs         # Entry point
-│   │   ├── api/                # API route handlers
-│   │   ├── controllers/        # Request controllers
-│   │   ├── models/             # Data models
-│   │   ├── middleware/         # Custom middleware
-│   │   ├── services/           # Business logic
-│   │   ├── utils/              # Backend utilities
-│   │   ├── config/             # Configuration files
-│   │   └── Cargo.toml          # Rust dependencies
-│   └── frontend/               # Next.js frontend
-│       ├── src/
-│       │   └── app/            # App Router (Next.js 15)
-│       ├── components/         # React components
-│       ├── pages/              # Page components
-│       ├── hooks/              # Custom React hooks
-│       ├── utils/              # Frontend utilities
-│       ├── styles/             # CSS/SCSS files
-│       ├── assets/             # Static assets
-│       └── package.json        # Node.js dependencies
-├── tests/
-│   ├── backend/                # Backend tests
-│   ├── frontend/               # Frontend tests
-│   └── e2e/                    # End-to-end tests
-├── docs/                       # Documentation
-├── scripts/                    # Build/deployment scripts
-├── Makefile                    # Development commands
-└── CLAUDE.md                   # This file
+
+### Development Workflow
+```bash
+# Start orchestration system with web UI
+./claude-flow start --ui --port 3000
+
+# Run TDD workflow for new feature
+./claude-flow sparc tdd "User authentication system with JWT tokens"
+
+# Development swarm for complex projects
+./claude-flow swarm "Build e-commerce API with payment integration" --strategy development --mode hierarchical --max-agents 8 --monitor
+
+# Check system status
+./claude-flow status
 ```
 
-## 🚀 Development
+### Analysis Workflow
+```bash
+# Analyze codebase performance
+./claude-flow sparc run analyzer "Identify performance bottlenecks in current codebase"
 
-### Quick Start Commands
+# Data analysis swarm
+./claude-flow swarm "Analyze user behavior patterns from logs" --strategy analysis --mode mesh --parallel --output sqlite
 
-Use the Makefile for common development tasks:
+# Store analysis results
+./claude-flow memory store "performance_analysis" "Bottlenecks identified in database queries"
+```
+
+### Maintenance Workflow
+```bash
+# System maintenance with safety controls
+./claude-flow swarm "Update dependencies and security patches" --strategy maintenance --mode centralized --monitor
+
+# Security review
+./claude-flow sparc run reviewer "Security audit of authentication system"
+
+# Export maintenance logs
+./claude-flow memory export maintenance_log.json
+```
+
+## Integration Patterns
+
+### Memory-Driven Coordination
+Use Memory to coordinate information across multiple SPARC modes and swarm operations:
 
 ```bash
-make dev        # Start both backend and frontend in development mode
-make tail-logs  # Tail application logs
-make build      # Build both backend and frontend
-make test       # Run all tests
-make clean      # Clean build artifacts
+# Store architecture decisions
+./claude-flow memory store "system_architecture" "Microservices with API Gateway pattern"
+
+# All subsequent operations can reference this decision
+./claude-flow sparc run coder "Implement user service based on system_architecture in memory"
+./claude-flow sparc run tester "Create integration tests for microservices architecture"
 ```
 
-### Backend (Rust)
-- **Framework**: To be determined (Axum/Actix-web/Warp)
-- **Database**: To be determined
-- **Port**: 8000 (default)
+### Multi-Stage Development
+Coordinate complex development through staged execution:
 
-### Frontend (Next.js 15)
-- **Framework**: Next.js with App Router
-- **Styling**: Tailwind CSS
-- **TypeScript**: Enabled
-- **Bundler**: Turbopack (dev mode)
-- **Port**: 3000 (default)
-
-## 📋 Development Rules
-
-### Git Commit Convention
-
-**ALWAYS use conventional commit format:**
-
-```
-<type>(<scope>): <description>
-
-[optional body]
-
-[optional footer]
-```
-
-**Types:**
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `style`: Code style changes (formatting, etc.)
-- `refactor`: Code refactoring
-- `test`: Adding or updating tests
-- `chore`: Build process or auxiliary tool changes
-- `perf`: Performance improvements
-- `ci`: CI/CD changes
-
-**Examples:**
 ```bash
-feat: add user authentication API
-fix(frontend): resolve login form validation
-docs: update API documentation
-refactor(backend): simplify database connection logic
-test: add unit tests for user service
+# Stage 1: Research and planning
+./claude-flow sparc run researcher "Research authentication best practices"
+./claude-flow sparc run architect "Design authentication system architecture"
+
+# Stage 2: Implementation
+./claude-flow sparc tdd "User registration and login functionality"
+./claude-flow sparc run coder "Implement JWT token management"
+
+# Stage 3: Testing and deployment
+./claude-flow sparc run tester "Comprehensive security testing"
+./claude-flow swarm "Deploy authentication system" --strategy maintenance --mode centralized
 ```
 
-### File Scope Restrictions
+### Enterprise Integration
+For enterprise environments with additional tooling:
 
-**IMPORTANT: Only work within this repository:**
-
-✅ **ALLOWED:**
-- Files under `/Users/nuttakit/project/zk/zkth-zkhack2025/`
-- Reading, editing, creating files in this project
-- Running commands within this project directory
-
-❌ **FORBIDDEN:**
-- Modifying files outside this repository
-- Global system configuration changes
-- Editing files in other projects
-- Modifying global Git configuration
-- Installing global packages without explicit permission
-
-### Frontend Focus Mode
-
-**CRITICAL: Claude must ONLY work with frontend files:**
-
-✅ **FRONTEND ONLY:**
-- Files under `src/frontend/` directory
-- Frontend-related configuration files (`package.json`, `next.config.ts`, `tailwind.config.js`)
-- Frontend tests under `tests/frontend/`
-- Frontend-specific documentation
-
-❌ **STRICTLY FORBIDDEN:**
-- Any files in `src/backend/` directory
-- Backend configuration files (`Cargo.toml`, `src/backend/config/`)
-- Backend tests under `tests/backend/`
-- Backend-related API development
-- Rust code modifications
-- Backend service implementations
-
-### Code Quality Standards
-
-- **Rust**: Follow standard Rust conventions, use `cargo fmt` and `cargo clippy`
-- **TypeScript/React**: Follow Next.js and React best practices
-- **Testing**: Write tests for new features and bug fixes
-- **Documentation**: Update documentation for significant changes
-
-## 🧪 Testing
-
-- **Backend**: `cargo test`
-- **Frontend**: `npm test`
-- **E2E**: To be configured
-
-## 📦 Dependencies
-
-### Backend Dependencies (Cargo.toml)
-- Core Rust dependencies to be added based on requirements
-
-### Frontend Dependencies (package.json)
-- Next.js 15
-- React 19
-- TypeScript
-- Tailwind CSS
-- ESLint
-
-## 🔧 Configuration
-
-- **Backend config**: `src/backend/config/`
-- **Frontend config**: `next.config.ts`, `tailwind.config.js`
-- **Development**: Environment variables in `.env.local`
-
-## 🔌 API Documentation
-
-### Available Backend Server
-
-A temporary backend server is running at `http://localhost:8080` with the following endpoints:
-
-#### Setup (macOS)
-
-1. **Install dependencies**
 ```bash
-brew install cmake pkgconf
+# Project management integration
+./claude-flow project create "authentication-system"
+./claude-flow project switch "authentication-system"
+
+# Security compliance
+./claude-flow security scan
+./claude-flow security audit
+
+# Analytics and monitoring
+./claude-flow analytics dashboard
+./claude-flow deploy production --monitor
 ```
 
-2. **Build the project**
-```bash
-cargo build --release
-```
+## Advanced Batch Tool Patterns
 
-3. **Run the backend**
-```bash
-./target/release/backend
-```
+### TodoWrite Coordination
+Always use TodoWrite for complex task coordination:
 
-#### Setup (Ubuntu)
-
-1. **Install dependencies**
-```bash
-apt install build-essential cmake pkg-config libsqlite3-dev sqlite3
-```
-
-2. **Build the project**
-```bash
-cargo build --release
-```
-
-3. **Run the backend**
-```bash
-./target/release/backend
-```
-
-### API Endpoints
-
-#### Prove
-`POST /prove`
-
-**Request Body:**
-```json
-{
-  "lat": 40.689247,
-  "lon": -74.044502,
-  "resolution": 10,
-  "h3_map": [
-    "8a2a1072b5affff",
-    "8a2a1072b51ffff",
-    "8a2a1072b50ffff"
-  ]
-}
-```
-
-**Response:**
-```json
-{
-  "ok": true,
-  "proof": {
-    "a": "RefqUj58Pc0cZnxIMtP1LpGBfg1laa7wEM1U2LUtQxxGyNA9exnouk6HuYkKvy6JFOGjwDFycQ8ah3xgaMtbDw==",
-    "b": "0f7MWKAiziNl0OlG033MY7l637et4H6o6+a9YAIq9CBZ0KUXwp2isNFfUo7hHkvc7lRJzef+HF2CVzqrKSZuAt/diotNZsy+FoGirPYLuSVLevvIQV9ZKTqOaBAKHusAQh34EhsV5UC7L+dYxuu8gFDBaSLN5MqQOmdCNB39jAE=",
-    "c": "KOTXK6+628Iam7b1dbPR+p17e/8Mz17cUtjzjGKdJiimB+58TjZlkyiMWYI+j2Q2sRjIwSw3/C6NcAQrsKwGFw=="
+```javascript
+TodoWrite([
+  {
+    id: "architecture_design",
+    content: "Design system architecture and component interfaces",
+    status: "pending",
+    priority: "high",
+    dependencies: [],
+    estimatedTime: "60min",
+    assignedAgent: "architect"
   },
-  "public_inputs": [
-    "gNHwCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-    "4vEpFmxeY/ONNjSAQm8tOyCq0M2Z4MhQGpmWT2060Bc=",
-    "J3mtmdI9u1p21NzGWwjVOMWEFac24KFDm5kK+pbgPAA=",
-    "U8+fmMpbWCFe6NZ3Pf/6TwJGqB3EbPxQsqdVcNdEABA=",
-    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-  ]
-}
+  {
+    id: "frontend_development", 
+    content: "Develop React components and user interface",
+    status: "pending",
+    priority: "medium",
+    dependencies: ["architecture_design"],
+    estimatedTime: "120min",
+    assignedAgent: "frontend_team"
+  }
+]);
 ```
 
-#### Verify
-`POST /verify`
+### Task and Memory Integration
+Launch coordinated agents with shared memory:
 
-**Request Body:**
-```json
-{
-  "proof": {
-    "a": "RefqUj58Pc0cZnxIMtP1LpGBfg1laa7wEM1U2LUtQxxGyNA9exnouk6HuYkKvy6JFOGjwDFycQ8ah3xgaMtbDw==",
-    "b": "0f7MWKAiziNl0OlG033MY7l637et4H6o6+a9YAIq9CBZ0KUXwp2isNFfUo7hHkvc7lRJzef+HF2CVzqrKSZuAt/diotNZsy+FoGirPYLuSVLevvIQV9ZKTqOaBAKHusAQh34EhsV5UC7L+dYxuu8gFDBaSLN5MqQOmdCNB39jAE=",
-    "c": "KOTXK6+628Iam7b1dbPR+p17e/8Mz17cUtjzjGKdJiimB+58TjZlkyiMWYI+j2Q2sRjIwSw3/C6NcAQrsKwGFw=="
-  },
-  "public_inputs": [
-    "gNHwCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-    "4vEpFmxeY/ONNjSAQm8tOyCq0M2Z4MhQGpmWT2060Bc=",
-    "J3mtmdI9u1p21NzGWwjVOMWEFac24KFDm5kK+pbgPAA=",
-    "U8+fmMpbWCFe6NZ3Pf/6TwJGqB3EbPxQsqdVcNdEABA=",
-    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-  ]
-}
+```javascript
+// Store architecture in memory
+Task("System Architect", "Design architecture and store specs in Memory");
+
+// Other agents use memory for coordination
+Task("Frontend Team", "Develop UI using Memory architecture specs");
+Task("Backend Team", "Implement APIs according to Memory specifications");
 ```
 
-**Response:**
-```json
-{
-  "ok": true
-}
-```
-or
-```json
-{
-  "ok": false
-}
-```
+## Code Style Preferences
+- Use ES modules (import/export) syntax
+- Destructure imports when possible
+- Use TypeScript for all new code
+- Follow existing naming conventions
+- Add JSDoc comments for public APIs
+- Use async/await instead of Promise chains
+- Prefer const/let over var
 
-### Environment Configuration
+## Workflow Guidelines
+- Always run typecheck after making code changes
+- Run tests before committing changes
+- Use meaningful commit messages
+- Create feature branches for new functionality
+- Ensure all tests pass before merging
 
-Use `.env.local` in the frontend directory to configure the API endpoint:
+## Important Notes
+- **Use TodoWrite extensively** for all complex task coordination
+- **Leverage Task tool** for parallel agent execution on independent work
+- **Store all important information in Memory** for cross-agent coordination
+- **Use batch file operations** whenever reading/writing multiple files
+- **Check .claude/commands/** for detailed command documentation
+- **All swarm operations include automatic batch tool coordination**
+- **Monitor progress** with TodoRead during long-running operations
+- **Enable parallel execution** with --parallel flags for maximum efficiency
 
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8080
-```
-
-## 📝 Notes
-
-This is a ZK Hack 2025 project focusing on zero-knowledge proofs and blockchain technology. The monolith architecture allows for rapid development and easy deployment while maintaining clear separation between frontend and backend concerns.
+This configuration ensures optimal use of Claude Code's batch tools for swarm orchestration and parallel task execution with full Claude-Flow capabilities.

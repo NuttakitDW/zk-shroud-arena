@@ -34,15 +34,31 @@ This project is built for ZK Hack 2025, showcasing practical applications of zer
 ### Development Setup
 
 ```bash
-# Start development environment
-make dev
+# Start frontend development server
+cd src/frontend
+npm install
+npm run dev
+
+# The frontend will be available at http://localhost:3001
+# Backend ZK proof service should be running at http://localhost:8080
 
 # Run tests
-make test
+npm run test
 
 # Build for production
-make build
+npm run build
 ```
+
+### Game Features (Implemented)
+
+- ✅ **Interactive Battle Royale Interface** - Complete game lobby, preparation, and active gameplay phases
+- ✅ **Real-time Map System** - Click-to-move controls with live player positioning
+- ✅ **ZK Proof Integration** - Location verification without revealing exact coordinates
+- ✅ **Arena Zones** - Safe zones and shrinking mechanics visualization
+- ✅ **Game State Management** - Complete React context-based state handling
+- ✅ **Backend Integration** - Connection to Rust ZK proof service at localhost:8080
+- ✅ **Privacy Controls** - Zero-knowledge location proofs for fair play
+- ✅ **Responsive Design** - Works on desktop and mobile devices
 
 ## 🔐 Privacy Features
 
