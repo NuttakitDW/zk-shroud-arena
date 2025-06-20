@@ -119,7 +119,7 @@ class MockZKProofService {
     }
   }
 
-  async submitProofToBlockchain(proof?: ProofOutput): Promise<string> {
+  async submitProofToBlockchain(): Promise<string> {
     await this.delay(500) // Longer delay for blockchain operations
     
     if (this.shouldFail) {
@@ -165,7 +165,7 @@ class MockZKProofService {
   }
 
   // Circuit management
-  async loadCircuit(circuitName?: string): Promise<boolean> {
+  async loadCircuit(): Promise<boolean> {
     await this.delay(200)
     
     if (this.shouldFail) {
@@ -249,8 +249,8 @@ export const generateGameStateProof = jest.fn<(gameId: string, round: number, pl
     mockZKProofService.generateGameStateProof(gameId, round, playerId, input)
 )
 
-export const submitProofToBlockchain = jest.fn<(proof?: ProofOutput) => Promise<string>>().mockImplementation((proof?: ProofOutput) => 
-  mockZKProofService.submitProofToBlockchain(proof)
+export const submitProofToBlockchain = jest.fn<(proof?: ProofOutput) => Promise<string>>().mockImplementation((_proof?: ProofOutput) => // eslint-disable-line @typescript-eslint/no-unused-vars
+  mockZKProofService.submitProofToBlockchain()
 )
 
 export const getProofStatus = jest.fn<(proofHash: string) => Promise<'pending' | 'confirmed' | 'failed'>>().mockImplementation((proofHash: string) => 
@@ -265,8 +265,8 @@ export const verifyBatchProofs = jest.fn<(proofs: ProofOutput[]) => Promise<Veri
   mockZKProofService.verifyBatchProofs(proofs)
 )
 
-export const loadCircuit = jest.fn<(circuitName?: string) => Promise<boolean>>().mockImplementation((circuitName?: string) => 
-  mockZKProofService.loadCircuit(circuitName)
+export const loadCircuit = jest.fn<(circuitName?: string) => Promise<boolean>>().mockImplementation((_circuitName?: string) => // eslint-disable-line @typescript-eslint/no-unused-vars
+  mockZKProofService.loadCircuit()
 )
 
 export const getCircuitInfo = jest.fn<(circuitName: string) => Promise<{ name: string; constraints: number; publicInputs: number; privateInputs: number; version: string; loaded: boolean; }>>().mockImplementation((circuitName: string) => 
