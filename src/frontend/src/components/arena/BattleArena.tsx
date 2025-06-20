@@ -65,7 +65,9 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     setIsFullscreen(!isFullscreen);
     if (!isFullscreen) {
       // Expand map to fill available space
-      setMapSize({ width: window.innerWidth - 100, height: window.innerHeight - 200 });
+      const width = typeof window !== 'undefined' ? window.innerWidth - 100 : 1820;
+      const height = typeof window !== 'undefined' ? window.innerHeight - 200 : 880;
+      setMapSize({ width, height });
       setMinimapSize(250);
     } else {
       // Reset to normal size
@@ -77,13 +79,15 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
-      if (isFullscreen) {
+      if (isFullscreen && typeof window !== 'undefined') {
         setMapSize({ width: window.innerWidth - 100, height: window.innerHeight - 200 });
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
   }, [isFullscreen]);
 
   // Reset map view to center

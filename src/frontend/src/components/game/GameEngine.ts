@@ -6,13 +6,13 @@
 import { 
   GameState, 
   GamePhase, 
-  PlayerLocation, 
   SafeZone, 
   Coordinates,
   ZKProofStatus,
   ZKProofData
 } from '../../types/gameState';
-import { generateLocationProof, verifyLocationProof } from '../../services/zkProofService';
+import { LocationCoordinates } from '../../types/zkProof';
+import { generateLocationProof } from '../../services/zkProofService';
 import { getWebSocketService } from '../../services/websocketService';
 
 export interface GameEngineConfig {
@@ -28,6 +28,13 @@ export interface GameEngineConfig {
     proofRequired: boolean;
     proofInterval: number;
     h3Resolution: number;
+  };
+  realWorldSettings: {
+    enabled: boolean;
+    centerLat: number;
+    centerLng: number;
+    radiusKm: number;
+    coordinateScale: number; // Scale factor for lat/lng to game coordinates
   };
   enableRealtime: boolean;
   enableBots: boolean;
@@ -47,6 +54,13 @@ export const DEFAULT_ENGINE_CONFIG: GameEngineConfig = {
     proofRequired: true,
     proofInterval: 60000, // 1 minute
     h3Resolution: 9
+  },
+  realWorldSettings: {
+    enabled: false,
+    centerLat: 37.7749, // San Francisco by default
+    centerLng: -122.4194,
+    radiusKm: 5, // 5km radius for real-world arena
+    coordinateScale: 100000 // Scale factor for converting lat/lng to game units
   },
   enableRealtime: true,
   enableBots: true,
@@ -68,15 +82,20 @@ export interface GameEngineState {
   gameStartTime: number;
   botPlayers: Map<string, BotPlayer>;
   spawnPoints: Coordinates[];
+  realWorldSpawnPoints?: LocationCoordinates[];
   damageZoneTimer?: number;
   botMovementTimer?: number;
   lastZoneShrink: number;
+  realWorldMode: boolean;
+  realWorldCenter?: LocationCoordinates;
+  currentGameId?: string;
 }
 
 export class GameEngine {
   private config: GameEngineConfig;
   private state: GameEngineState;
   private gameStateUpdater: (updater: (state: GameState) => GameState) => void;
+  private currentGameId?: string;
   
   constructor(
     config: Partial<GameEngineConfig> = {},
@@ -90,7 +109,13 @@ export class GameEngine {
       gameStartTime: 0,
       botPlayers: new Map(),
       spawnPoints: this.generateSpawnPoints(),
-      lastZoneShrink: 0
+      realWorldSpawnPoints: this.generateRealWorldSpawnPoints(),
+      lastZoneShrink: 0,
+      realWorldMode: this.config.realWorldSettings.enabled,
+      realWorldCenter: this.config.realWorldSettings.enabled ? {
+        latitude: this.config.realWorldSettings.centerLat,
+        longitude: this.config.realWorldSettings.centerLng
+      } : undefined
     };
   }
 
@@ -102,6 +127,12 @@ export class GameEngine {
     
     // Initialize spawn points
     this.state.spawnPoints = this.generateSpawnPoints();
+    
+    // Initialize real-world spawn points if enabled
+    if (this.config.realWorldSettings.enabled) {
+      this.state.realWorldSpawnPoints = this.generateRealWorldSpawnPoints();
+      console.log('🌍 Real-world spawn points generated');
+    }
     
     // Create bot players if enabled
     if (this.config.enableBots) {
@@ -122,7 +153,7 @@ export class GameEngine {
       }
     }
     
-    console.log('✅ Game Engine initialized successfully');
+    console.log(`✅ Game Engine initialized successfully (Real-world mode: ${this.state.realWorldMode ? 'enabled' : 'disabled'})`);
   }
 
   /**
@@ -198,12 +229,25 @@ export class GameEngine {
   }
 
   /**
-   * Spawn player at random spawn point
+   * Spawn player at random spawn point (supports both virtual and real-world modes)
    */
-  public spawnPlayer(playerId: string): Coordinates {
-    const spawnPoint = this.getRandomSpawnPoint();
+  public spawnPlayer(playerId: string, useRealWorld: boolean = false): Coordinates {
+    let spawnPoint: Coordinates;
+    let realWorldSpawn: LocationCoordinates | undefined;
     
-    console.log(`👤 Spawning player ${playerId} at (${spawnPoint.x}, ${spawnPoint.y})`);
+    if (useRealWorld && this.state.realWorldMode && this.state.realWorldSpawnPoints) {
+      // Use real-world spawn point
+      const realWorldPoint = this.state.realWorldSpawnPoints[Math.floor(Math.random() * this.state.realWorldSpawnPoints.length)];
+      realWorldSpawn = realWorldPoint;
+      spawnPoint = this.realWorldToGameCoordinates(realWorldPoint);
+      
+      console.log(`👤 Spawning player ${playerId} at real-world location (${realWorldPoint.latitude.toFixed(6)}, ${realWorldPoint.longitude.toFixed(6)})`);
+    } else {
+      // Use virtual spawn point
+      spawnPoint = this.getRandomSpawnPoint();
+      
+      console.log(`👤 Spawning player ${playerId} at virtual location (${spawnPoint.x}, ${spawnPoint.y})`);
+    }
     
     // Update player location in game state
     this.gameStateUpdater(state => ({
@@ -215,7 +259,8 @@ export class GameEngine {
           x: spawnPoint.x,
           y: spawnPoint.y,
           timestamp: Date.now(),
-          zone: 'safe'
+          zone: 'safe',
+          realWorldCoordinates: realWorldSpawn
         },
         health: 100,
         maxHealth: 100,
@@ -228,16 +273,33 @@ export class GameEngine {
 
   /**
    * Handle player movement with ZK proof validation
+   * Supports both virtual coordinates and real-world GPS coordinates
    */
   public async movePlayer(
     playerId: string, 
-    newPosition: Coordinates, 
-    requireProof: boolean = false
+    newPosition: Coordinates | LocationCoordinates, 
+    requireProof: boolean = false,
+    isRealWorldCoordinate: boolean = false
   ): Promise<{ success: boolean; requiresProof?: boolean; error?: string }> {
+    let gamePosition: Coordinates;
+    let realWorldLocation: LocationCoordinates | undefined;
     
-    // Basic position validation
-    if (!this.isValidPosition(newPosition)) {
-      return { success: false, error: 'Invalid position - outside arena bounds' };
+    if (isRealWorldCoordinate) {
+      // Convert real-world coordinates to game coordinates
+      const rwPos = newPosition as LocationCoordinates;
+      realWorldLocation = rwPos;
+      gamePosition = this.realWorldToGameCoordinates(rwPos);
+      
+      if (!this.isValidRealWorldPosition(rwPos)) {
+        return { success: false, error: 'Invalid real-world position - outside arena bounds' };
+      }
+    } else {
+      // Use virtual coordinates directly
+      gamePosition = newPosition as Coordinates;
+      
+      if (!this.isValidPosition(gamePosition)) {
+        return { success: false, error: 'Invalid position - outside arena bounds' };
+      }
     }
     
     // Check if ZK proof is required
@@ -245,11 +307,25 @@ export class GameEngine {
       try {
         console.log('🔐 Generating ZK proof for location...');
         
-        // Generate H3 indices for the area (simplified)
-        const h3Map = [`h3_${Math.floor(newPosition.x / 100)}_${Math.floor(newPosition.y / 100)}`];
+        // Get h3Map from game state - wait for it to be available
+        const h3Map = await this.getH3MapFromState();
+        if (!h3Map || h3Map.length === 0) {
+          console.warn('⚠️ H3 map not yet received from server, proof generation postponed');
+          return { 
+            success: true, 
+            requiresProof: true, 
+            error: 'Waiting for arena map data from server' 
+          };
+        }
+        
+        // Use real-world coordinates for proof if available, otherwise convert game coordinates
+        const proofLocation = realWorldLocation || {
+          latitude: gamePosition.y / 100,
+          longitude: gamePosition.x / 100
+        };
         
         const proofResult = await generateLocationProof(
-          { lat: newPosition.y / 100, lon: newPosition.x / 100 },
+          proofLocation,
           this.config.zkSettings.h3Resolution,
           h3Map
         );
@@ -267,10 +343,11 @@ export class GameEngine {
           playerState: {
             ...state.playerState,
             location: {
-              x: newPosition.x,
-              y: newPosition.y,
+              x: gamePosition.x,
+              y: gamePosition.y,
               timestamp: Date.now(),
-              zone: this.isInSafeZone(newPosition, state.arenaState.currentZone) ? 'safe' : 'danger'
+              zone: this.isInSafeZone(gamePosition, state.arenaState.currentZone) ? 'safe' : 'danger',
+              realWorldCoordinates: realWorldLocation
             }
           },
           zkProofState: {
@@ -280,7 +357,8 @@ export class GameEngine {
               proof: proofResult.data.proof,
               publicInputs: proofResult.data.public_inputs,
               timestamp: Date.now(),
-              location: newPosition,
+              location: gamePosition,
+              realWorldLocation: realWorldLocation,
               hash: `hash_${Date.now()}`
             } as ZKProofData
           }
@@ -297,10 +375,11 @@ export class GameEngine {
         playerState: {
           ...state.playerState,
           location: {
-            x: newPosition.x,
-            y: newPosition.y,
+            x: gamePosition.x,
+            y: gamePosition.y,
             timestamp: Date.now(),
-            zone: this.isInSafeZone(newPosition, state.arenaState.currentZone) ? 'safe' : 'danger'
+            zone: this.isInSafeZone(gamePosition, state.arenaState.currentZone) ? 'safe' : 'danger',
+            realWorldCoordinates: realWorldLocation
           }
         }
       }));
@@ -317,6 +396,8 @@ export class GameEngine {
     gameTime: number;
     currentZoneRadius: number;
     nextShrinkIn: number;
+    realWorldMode: boolean;
+    realWorldCenter?: LocationCoordinates;
   } {
     const gameTime = this.state.isRunning ? Date.now() - this.state.gameStartTime : 0;
     const nextShrinkIn = Math.max(0, 
@@ -327,7 +408,9 @@ export class GameEngine {
       playersAlive: 1 + Array.from(this.state.botPlayers.values()).filter(bot => bot.isAlive).length,
       gameTime,
       currentZoneRadius: 800, // Would get from game state
-      nextShrinkIn
+      nextShrinkIn,
+      realWorldMode: this.state.realWorldMode,
+      realWorldCenter: this.state.realWorldCenter
     };
   }
 
@@ -338,12 +421,64 @@ export class GameEngine {
     return Array.from(this.state.botPlayers.values());
   }
 
+  /**
+   * Enable/disable real-world mode
+   */
+  public setRealWorldMode(enabled: boolean, center?: LocationCoordinates): void {
+    this.state.realWorldMode = enabled;
+    if (center) {
+      this.state.realWorldCenter = center;
+      this.config.realWorldSettings.centerLat = center.latitude;
+      this.config.realWorldSettings.centerLng = center.longitude;
+    }
+    
+    console.log(`🌍 Real world mode ${enabled ? 'enabled' : 'disabled'}`);
+  }
+
+  /**
+   * Get current real-world mode status
+   */
+  public isRealWorldMode(): boolean {
+    return this.state.realWorldMode;
+  }
+
+  /**
+   * Convert real-world coordinates to game coordinates
+   */
+  public realWorldToGameCoordinates(location: LocationCoordinates): Coordinates {
+    const { centerLat, centerLng, coordinateScale } = this.config.realWorldSettings;
+    
+    // Convert lat/lng offset from center to game coordinates
+    const deltaLat = location.latitude - centerLat;
+    const deltaLng = location.longitude - centerLng;
+    
+    const x = (deltaLng * coordinateScale) + (this.config.arenaSize.width / 2);
+    const y = (deltaLat * coordinateScale) + (this.config.arenaSize.height / 2);
+    
+    return { x, y };
+  }
+
+  /**
+   * Convert game coordinates to real-world coordinates
+   */
+  public gameToRealWorldCoordinates(position: Coordinates): LocationCoordinates {
+    const { centerLat, centerLng, coordinateScale } = this.config.realWorldSettings;
+    
+    const deltaX = position.x - (this.config.arenaSize.width / 2);
+    const deltaY = position.y - (this.config.arenaSize.height / 2);
+    
+    const latitude = centerLat + (deltaY / coordinateScale);
+    const longitude = centerLng + (deltaX / coordinateScale);
+    
+    return { latitude, longitude };
+  }
+
   // Private helper methods
 
   private generateSpawnPoints(): Coordinates[] {
     const points: Coordinates[] = [];
     const { width, height } = this.config.arenaSize;
-    const margin = 100; // Keep spawn points away from edges
+    // const margin = 100; // Keep spawn points away from edges - TODO: implement spawn point logic
     
     // Generate spawn points in a circle around the center
     const centerX = width / 2;
@@ -424,13 +559,13 @@ export class GameEngine {
   private startDamageZoneLoop(): void {
     this.state.damageZoneTimer = setInterval(() => {
       this.processDamageZone();
-    }, 1000) as any; // Type assertion for Node.js/browser compatibility
+    }, 1000) as unknown as number; // Type assertion for browser compatibility
   }
 
   private startBotMovementLoop(): void {
     this.state.botMovementTimer = setInterval(() => {
       this.updateBotMovements();
-    }, 2000) as any; // Update bot movements every 2 seconds
+    }, 2000) as unknown as number; // Update bot movements every 2 seconds
   }
 
   private startZoneShrinkLoop(): void {
@@ -572,4 +707,71 @@ export class GameEngine {
     );
     return distance <= zone.radius;
   }
-}
+
+  private generateRealWorldSpawnPoints(): LocationCoordinates[] {
+    const points: LocationCoordinates[] = [];
+    const { centerLat, centerLng, radiusKm } = this.config.realWorldSettings;
+    
+    // Generate spawn points in a circle around the real-world center
+    for (let i = 0; i < this.config.maxPlayers; i++) {
+      const angle = (i / this.config.maxPlayers) * 2 * Math.PI;
+      const distance = radiusKm * 0.7; // 70% of max radius
+      
+      // Convert km to degrees (approximate)
+      const latOffset = (distance / 111) * Math.cos(angle); // 111 km per degree latitude
+      const lngOffset = (distance / (111 * Math.cos(centerLat * Math.PI / 180))) * Math.sin(angle);
+      
+      points.push({
+        latitude: centerLat + latOffset,
+        longitude: centerLng + lngOffset
+      });
+    }
+    
+    return points;
+  }
+
+  private isValidRealWorldPosition(location: LocationCoordinates): boolean {
+    const { centerLat, centerLng, radiusKm } = this.config.realWorldSettings;
+    
+    // Calculate distance from center using Haversine formula (simplified)
+    const R = 6371; // Earth's radius in km
+    const dLat = (location.latitude - centerLat) * Math.PI / 180;
+    const dLng = (location.longitude - centerLng) * Math.PI / 180;
+    
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(centerLat * Math.PI / 180) * Math.cos(location.latitude * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+    
+    return distance <= radiusKm;
+  }
+
+  /**
+   * Get H3 map from current game state
+   */
+  private async getH3MapFromState(): Promise<string[] | null> {
+    return new Promise((resolve) => {
+      this.gameStateUpdater(state => {
+        const h3Map = state.arenaState.h3Map;
+        resolve(h3Map && h3Map.length > 0 ? h3Map : null);
+        return state; // No state change
+      });
+    });
+  }
+
+  /**
+   * Request H3 map from server (called during initialization)
+   */
+  public requestH3MapFromServer(): void {
+    if (this.config.enableRealtime) {
+      const wsService = getWebSocketService();
+      if (wsService.isConnected()) {
+        console.log('📍 Requesting H3 map from server...');
+        wsService.send('request_h3_map' as any, { 
+          gameId: this.currentGameId,
+          resolution: this.config.zkSettings.h3Resolution 
+        });
+      }
+    }
+  }
