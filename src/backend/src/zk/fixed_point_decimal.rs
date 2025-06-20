@@ -123,4 +123,24 @@ impl<F: PrimeField, const PREC: u32> DecVar<F, PREC> {
             neg: final_sign_bit,
         })
     }
+
+    pub fn sub(&self, rhs: &Self) -> Result<Self, SynthesisError> {
+        let rhs_negated_sign = !(&rhs.neg);
+        self.add(&Self {
+            val: rhs.val.clone(),
+            neg: rhs_negated_sign,
+        })
+    }
+
+    pub fn mul_unscaled(&self, rhs: &Self) -> Result<Self, SynthesisError> {
+        let result_val = &self.val * &rhs.val;
+        let result_is_zero = result_val.is_zero()?;
+        let mut result_neg = (&self.neg) ^ (&rhs.neg);
+        result_neg = Boolean::select(&result_is_zero, &Boolean::FALSE, &result_neg)?;
+
+        Ok(Self {
+            val: result_val,
+            neg: result_neg,
+        })
+    }
 }
