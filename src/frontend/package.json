@@ -8,16 +8,23 @@
     "start": "next start -p 3001",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --watchAll=false"
+    "test": "jest --no-coverage --maxWorkers=75%",
+    "test:watch": "jest --watch --no-coverage --maxWorkers=50%",
+    "test:fast": "JEST_SILENT=true jest --no-coverage --maxWorkers=75% --bail --forceExit",
+    "test:speed": "JEST_SILENT=true jest --no-coverage --maxWorkers=100% --bail --forceExit",
+    "test:parallel": "jest --no-coverage --maxWorkers=100% --bail",
+    "test:coverage": "jest --coverage --maxWorkers=50%",
+    "test:ci": "jest --ci --coverage --watchAll=false --maxWorkers=1 --forceExit",
+    "test:single": "jest --no-coverage --maxWorkers=1 --runInBand"
   },
   "dependencies": {
+    "@types/leaflet": "^1.9.18",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.518.0",
     "next": "15.3.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
