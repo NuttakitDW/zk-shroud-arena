@@ -53,6 +53,20 @@ impl<F: PrimeField, const PREC: u32> Dec<F, PREC> {
         }
         self.add(r_negated)
     }
+
+    pub fn mul_unscaled(self, rhs: Self) -> Self {
+        let result_val = self.val * rhs.val;
+        let result_neg = if result_val.is_zero() {
+            false
+        } else {
+            self.neg ^ rhs.neg
+        };
+
+        Self {
+            val: result_val,
+            neg: result_neg,
+        }
+    }
 }
 
 pub struct DecVar<F: PrimeField, const PREC: u32> {
