@@ -38,7 +38,9 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleReload = () => {
-    window.location.reload();
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
   };
 
   handleResetError = () => {
