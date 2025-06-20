@@ -1,5 +1,12 @@
+use std::borrow::Borrow;
+
 use ark_ff::PrimeField;
-use ark_r1cs_std::{fields::fp::FpVar, prelude::Boolean};
+use ark_r1cs_std::{
+    alloc::{AllocVar, AllocationMode},
+    fields::{FieldVar, fp::FpVar},
+    prelude::Boolean,
+};
+use ark_relations::r1cs::{Namespace, SynthesisError};
 
 #[derive(Copy, Clone)]
 pub struct Dec<F: PrimeField, const PREC: u32> {
@@ -72,6 +79,30 @@ impl<F: PrimeField, const PREC: u32> Dec<F, PREC> {
 pub struct DecVar<F: PrimeField, const PREC: u32> {
     pub val: FpVar<F>,
     pub neg: Boolean<F>,
+}
+
+fn cst<F: PrimeField>(plus: bool) -> FpVar<F> {
+    if plus {
+        FpVar::constant(F::one())
+    } else {
+        FpVar::constant(-F::one())
+    }
+}
+
+impl<F: PrimeField, const PREC: u32> AllocVar<Dec<F, PREC>, F> for DecVar<F, PREC> {
+    fn new_variable<T: Borrow<Dec<F, PREC>>>(
+        cs: impl Into<Namespace<F>>,
+        f: impl FnOnce() -> Result<T, SynthesisError>,
+        mode: AllocationMode,
+    ) -> Result<Self, SynthesisError> {
+        let ns = cs.into();
+        let val = f()?;
+        let borrowed_val = val.borrow();
+        Ok(Self {
+            val: FpVar::new_variable(ns.clone(), || Ok(borrowed_val.val), mode)?,
+            neg: Boolean::new_variable(ns, || Ok(borrowed_val.neg), mode)?,
+        })
+    }
 }
 
 impl<F: PrimeField, const PREC: u32> DecVar<F, PREC> {}
