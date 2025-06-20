@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useRef, useEffect } from 'react';
-import { Crosshair, Circle, Users } from 'lucide-react';
+import { Circle, Users, Map, Navigation } from 'lucide-react';
 
 export interface MinimapPlayer {
   id: string;
@@ -28,6 +28,11 @@ export interface MinimapProps {
   showGrid?: boolean;
   showPlayerNames?: boolean;
   onPlayerClick?: (playerId: string) => void;
+  // Real-world map integration
+  enableRealWorldToggle?: boolean;
+  isRealWorldMode?: boolean;
+  onToggleRealWorld?: (enabled: boolean) => void;
+  realWorldCenter?: { lat: number; lng: number };
 }
 
 export const Minimap: React.FC<MinimapProps> = ({
@@ -40,9 +45,14 @@ export const Minimap: React.FC<MinimapProps> = ({
   showGrid = true,
   showPlayerNames = false,
   onPlayerClick,
+  enableRealWorldToggle = false,
+  isRealWorldMode = false,
+  onToggleRealWorld,
+  realWorldCenter,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const currentPlayer = players.find(p => p.isCurrentPlayer);
+  // const [showRealWorldOverlay, setShowRealWorldOverlay] = useState(false); // TODO: implement real-world overlay
+  // const currentPlayer = players.find(p => p.isCurrentPlayer); // TODO: use for player highlighting
 
   // Scale factor to convert world coordinates to minimap coordinates
   const scale = useMemo(() => {
@@ -199,7 +209,7 @@ export const Minimap: React.FC<MinimapProps> = ({
     ctx.lineWidth = 2;
     ctx.strokeRect(1, 1, size - 2, size - 2);
 
-  }, [players, currentZone, nextZone, scale, size, showGrid, showPlayerNames]);
+  }, [players, currentZone, nextZone, scale, size, showGrid, showPlayerNames, worldToMinimap]);
 
   // Handle clicks on minimap
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -233,22 +243,60 @@ export const Minimap: React.FC<MinimapProps> = ({
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
           <Circle className="h-4 w-4 text-accent-primary" />
-          <span className="text-foreground font-semibold text-sm">Map</span>
+          <span className="text-foreground font-semibold text-sm">
+            {isRealWorldMode ? 'Real Map' : 'Virtual Map'}
+          </span>
         </div>
-        <div className="flex items-center space-x-1">
-          <Users className="h-3 w-3 text-gray-400" />
-          <span className="text-gray-400 text-xs">{alivePlayers}</span>
+        <div className="flex items-center space-x-2">
+          {/* Real World Toggle */}
+          {enableRealWorldToggle && (
+            <button
+              onClick={() => {
+                const newMode = !isRealWorldMode;
+                // setShowRealWorldOverlay(newMode); // TODO: implement when real-world overlay is ready
+                onToggleRealWorld?.(newMode);
+              }}
+              className={`p-1 rounded transition-colors ${
+                isRealWorldMode 
+                  ? 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30' 
+                  : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+              }`}
+              title={isRealWorldMode ? 'Switch to Virtual Map' : 'Switch to Real World Map'}
+            >
+              {isRealWorldMode ? <Map className="h-3 w-3" /> : <Navigation className="h-3 w-3" />}
+            </button>
+          )}
+          
+          <div className="flex items-center space-x-1">
+            <Users className="h-3 w-3 text-gray-400" />
+            <span className="text-gray-400 text-xs">{alivePlayers}</span>
+          </div>
         </div>
       </div>
 
       {/* Canvas */}
-      <canvas
-        ref={canvasRef}
-        width={size}
-        height={size}
-        className="cursor-pointer border border-glass-border rounded"
-        onClick={handleClick}
-      />
+      <div className="relative">
+        <canvas
+          ref={canvasRef}
+          width={size}
+          height={size}
+          className="cursor-pointer border border-glass-border rounded"
+          onClick={handleClick}
+        />
+        
+        {/* Real World Mode Overlay */}
+        {isRealWorldMode && realWorldCenter && (
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 rounded border border-cyan-500/30 flex items-center justify-center">
+            <div className="text-center">
+              <Map className="h-6 w-6 text-cyan-400 mx-auto mb-1" />
+              <div className="text-xs text-cyan-300 font-medium">Real World Mode</div>
+              <div className="text-xs text-gray-400">
+                {realWorldCenter.lat.toFixed(4)}°, {realWorldCenter.lng.toFixed(4)}°
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Legend */}
       <div className="mt-2 space-y-1 text-xs">
@@ -262,8 +310,14 @@ export const Minimap: React.FC<MinimapProps> = ({
         </div>
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 border border-accent-primary rounded-full"></div>
-          <span className="text-gray-400">Safe Zone</span>
+          <span className="text-gray-400">{isRealWorldMode ? 'Real Zone' : 'Safe Zone'}</span>
         </div>
+        {isRealWorldMode && (
+          <div className="flex items-center space-x-2">
+            <Map className="w-2 h-2 text-cyan-400" />
+            <span className="text-gray-400">GPS Active</span>
+          </div>
+        )}
       </div>
 
       {/* Zone Timer */}

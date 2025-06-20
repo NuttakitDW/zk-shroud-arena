@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Crown, Trophy, Target, Clock, Shield, Users, RefreshCw, Home, Share2, Copy, Check } from 'lucide-react';
-import { ZKProofStatus } from '../../types/gameState';
+import { Crown, Trophy, Target, Shield, RefreshCw, Home, Share2, Copy, Check } from 'lucide-react';
 
 export interface GameStats {
   placement: number;
@@ -36,7 +35,6 @@ export const GameEndScreen: React.FC<GameEndScreenProps> = ({
   gameId,
   onPlayAgain,
   onMainMenu,
-  onShare,
   className = '',
 }) => {
   const [showStats, setShowStats] = useState(false);

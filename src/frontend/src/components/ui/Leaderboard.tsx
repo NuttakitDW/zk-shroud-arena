@@ -170,7 +170,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
 
       {/* Player List */}
       <div className="space-y-2">
-        {sortedPlayers.map((player, index) => (
+        {sortedPlayers.map((player) => (
           <div
             key={player.id}
             className={`grid grid-cols-12 gap-2 p-3 rounded-lg transition-all ${
