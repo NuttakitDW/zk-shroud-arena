@@ -2,12 +2,13 @@ use std::cmp::Ordering;
 
 use ark_crypto_primitives::sponge::{
     Absorb, CryptographicSponge,
+    constraints::CryptographicSpongeVar,
     poseidon::{PoseidonConfig, PoseidonSponge},
 };
 use ark_ff::PrimeField;
 use ark_r1cs_std::{
+    boolean::Boolean,
     fields::{FieldVar, fp::FpVar},
-    prelude::Boolean,
 };
 use ark_relations::r1cs::SynthesisError;
 
@@ -146,22 +147,66 @@ pub fn hash_polygon<F: PrimeField + Absorb, const PREC: u32, const MAX_VERTICES:
     cfg: &PoseidonConfig<F>,
 ) -> F {
     assert!(num_vertices <= MAX_VERTICES, "num_vertices out of range");
+
     let mut sponge = PoseidonSponge::<F>::new(cfg);
 
-    let len_elem = F::from(num_vertices as u64);
-    sponge.absorb(&len_elem);
+    sponge.absorb(&F::from(num_vertices as u64));
 
-    for i in 0..num_vertices {
-        let v = &polygon[i];
+    for i in 0..MAX_VERTICES {
+        if i < num_vertices {
+            let v = &polygon[i];
 
-        sponge.absorb(&v.x.val);
-        let x_sign: F = if v.x.neg { F::one() } else { F::zero() };
-        sponge.absorb(&x_sign);
+            sponge.absorb(&v.x.val);
+            sponge.absorb(&if v.x.neg { F::one() } else { F::zero() });
 
-        sponge.absorb(&v.y.val);
-        let y_sign: F = if v.y.neg { F::one() } else { F::zero() };
-        sponge.absorb(&y_sign);
+            sponge.absorb(&v.y.val);
+            sponge.absorb(&if v.y.neg { F::one() } else { F::zero() });
+        } else {
+            sponge.absorb(&F::zero()); // x_val
+            sponge.absorb(&F::zero()); // x_sign
+            sponge.absorb(&F::zero()); // y_val
+            sponge.absorb(&F::zero()); // y_sign
+        }
     }
 
     sponge.squeeze_field_elements(1)[0]
+}
+
+pub fn hash_polygon_gadget<F: PrimeField + Absorb, const PREC: u32, const MAX_VERTICES: usize>(
+    polygon: &[Point2DDecVar<F, PREC>; MAX_VERTICES],
+    num_vertices: &FpVar<F>,
+    cfg: &PoseidonConfig<F>,
+) -> Result<FpVar<F>, SynthesisError> {
+    use ark_crypto_primitives::sponge::poseidon::constraints::PoseidonSpongeVar;
+    use ark_r1cs_std::{boolean::Boolean, prelude::R1CSVar};
+    use core::cmp::Ordering;
+
+    let cs = num_vertices.cs();
+    let one = FpVar::<F>::constant(F::one());
+    let zero = FpVar::<F>::zero();
+
+    let mut sponge = PoseidonSpongeVar::<F>::new(cs, cfg);
+
+    sponge.absorb(num_vertices)?;
+
+    for i in 0..MAX_VERTICES {
+        let i_const = FpVar::<F>::constant(F::from(i as u64));
+        let active_i = i_const.is_cmp_unchecked(num_vertices, Ordering::Less, false)?;
+
+        let flag_f = Boolean::select(&active_i, &one, &zero)?;
+
+        let v = &polygon[i];
+
+        let x_val = &v.x.val * &flag_f;
+        let x_sign = Boolean::select(&v.x.neg, &one, &zero)? * &flag_f;
+        sponge.absorb(&x_val)?;
+        sponge.absorb(&x_sign)?;
+
+        let y_val = &v.y.val * &flag_f;
+        let y_sign = Boolean::select(&v.y.neg, &one, &zero)? * &flag_f;
+        sponge.absorb(&y_val)?;
+        sponge.absorb(&y_sign)?;
+    }
+
+    Ok(sponge.squeeze_field_elements(1)?[0].clone())
 }
