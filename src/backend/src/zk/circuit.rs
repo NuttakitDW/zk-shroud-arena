@@ -1,5 +1,9 @@
 use std::cmp::Ordering;
 
+use ark_crypto_primitives::sponge::{
+    Absorb, CryptographicSponge,
+    poseidon::{PoseidonConfig, PoseidonSponge},
+};
 use ark_ff::PrimeField;
 use ark_r1cs_std::{
     fields::{FieldVar, fp::FpVar},
@@ -134,4 +138,30 @@ pub fn is_point_in_polygon_gadget<F: PrimeField, const PREC: u32, const MAX_VERT
     let valid_n = num_vertices.is_cmp_unchecked(&three_f, Ordering::Greater, false)?;
     let outside_zero = outside_count.is_zero()?;
     Ok(valid_n & outside_zero)
+}
+
+pub fn hash_polygon<F: PrimeField + Absorb, const PREC: u32, const MAX_VERTICES: usize>(
+    polygon: &[Point2DDec<F, PREC>; MAX_VERTICES],
+    num_vertices: usize,
+    cfg: &PoseidonConfig<F>,
+) -> F {
+    assert!(num_vertices <= MAX_VERTICES, "num_vertices out of range");
+    let mut sponge = PoseidonSponge::<F>::new(cfg);
+
+    let len_elem = F::from(num_vertices as u64);
+    sponge.absorb(&len_elem);
+
+    for i in 0..num_vertices {
+        let v = &polygon[i];
+
+        sponge.absorb(&v.x.val);
+        let x_sign: F = if v.x.neg { F::one() } else { F::zero() };
+        sponge.absorb(&x_sign);
+
+        sponge.absorb(&v.y.val);
+        let y_sign: F = if v.y.neg { F::one() } else { F::zero() };
+        sponge.absorb(&y_sign);
+    }
+
+    sponge.squeeze_field_elements(1)[0]
 }
