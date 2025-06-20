@@ -27,6 +27,7 @@ pub fn comp_dec_less_than<F: PrimeField, const PREC: u32>(
     }
 }
 
+// compare l < r
 pub fn comp_dec_less_than_gadget<F: PrimeField, const PREC: u32>(
     l: &DecVar<F, PREC>,
     r: &DecVar<F, PREC>,
@@ -46,4 +47,42 @@ pub fn comp_dec_less_than_gadget<F: PrimeField, const PREC: u32>(
     let case4 = &case4_cond & &case4_val_gt;
 
     Ok(case1 | case3 | case4)
+}
+
+pub fn is_point_in_polygon<F: PrimeField, const PREC: u32, const MAX_VERTICES: usize>(
+    point: &Point2DDec<F, PREC>,
+    polygon: &[Point2DDec<F, PREC>; MAX_VERTICES],
+    num_vertices: usize,
+    epsilon: Dec<F, PREC>,
+) -> bool {
+    if num_vertices < 3 {
+        return false;
+    }
+
+    let mut is_outside_count = 0;
+    let neg_epsilon = epsilon.mul_unscaled(Dec {
+        val: F::one(),
+        neg: true,
+    });
+
+    for i in 0..num_vertices {
+        let current = &polygon[i];
+        let next = &polygon[(i + 1) % num_vertices];
+
+        // d_j = (x2 - x1) * (py - y1) - (y2 - y1) * (px - x1)
+        let x2_minus_x1 = next.x.sub(current.x);
+        let py_minus_y1 = point.y.sub(current.y);
+        let y2_minus_y1 = next.y.sub(current.y);
+        let px_minus_x1 = point.x.sub(current.x);
+
+        let a = x2_minus_x1.mul_unscaled(py_minus_y1);
+        let b = y2_minus_y1.mul_unscaled(px_minus_x1);
+        let d_j = a.sub(b);
+
+        if comp_dec_less_than(&d_j, &neg_epsilon) {
+            is_outside_count += 1;
+        }
+    }
+
+    is_outside_count == 0
 }
