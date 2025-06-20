@@ -1,0 +1,194 @@
+{
+  "timestamp": "2025-06-20T19:38:49.274Z",
+  "version": "1.0",
+  "entries": [
+    {
+      "id": "entry_mc57f8dx_3vuy6noj7",
+      "key": "zk_integration_specs",
+      "value": "ZK Proof Service Integration Specifications: API endpoints /prove (POST with lat, lon, resolution, h3_map) and /verify (POST with proof, public_inputs). Base URL: http://localhost:8080. Service layer includes error handling, retry logic, and proof caching strategy. TypeScript interfaces for location validation proofs.",
+      "type": "string",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-20T19:29:57.045Z",
+      "updatedAt": "2025-06-20T19:29:57.045Z",
+      "lastAccessedAt": "2025-06-20T19:31:47.692Z",
+      "version": 1,
+      "size": 350,
+      "compressed": false,
+      "checksum": "d215e57e4dbc964661d9a6273ece04786e7fb18fde51d995ed0da31458174012",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mc57ffqy_bmcxtf3rd",
+      "key": "location_components_specs",
+      "value": "Location Component Specifications:\n\nGAMEMAP COMPONENT:\n- Path: /Users/nuttakit/project/zk/zkth-zkhack2025/src/frontend/src/components/Map/GameMap.tsx\n- Purpose: Main map visualization component for game arena\n- Features: HTML5 Canvas rendering, zoom/pan controls, responsive design\n- Props: arena bounds, player positions, game state\n- Hooks: useState for zoom/pan, useEffect for canvas updates\n- Styling: Tailwind CSS for responsive container\n\nARENAZONE COMPONENT:\n- Path: /Users/nuttakit/project/zk/zkth-zkhack2025/src/frontend/src/components/Map/ArenaZone.tsx\n- Purpose: Visualize arena boundaries and safe zones\n- Features: SVG boundary rendering, animated zone indicators\n- Props: zone coordinates, zone status, boundary type\n- Styling: Tailwind CSS with custom SVG styling\n\nLOCATIONTRACKER COMPONENT:\n- Path: /Users/nuttakit/project/zk/zkth-zkhack2025/src/frontend/src/components/Location/LocationTracker.tsx\n- Purpose: Track and display location with privacy preservation\n- Features: Approximate location display, geolocation API integration\n- Props: privacy level, tracking enabled, location callback\n- Privacy: No exact coordinates, zone-based positioning\n\nPLAYERINDICATOR COMPONENT:\n- Path: /Users/nuttakit/project/zk/zkth-zkhack2025/src/frontend/src/components/Map/PlayerIndicator.tsx\n- Purpose: Display player positions with privacy preservation\n- Features: Avatar/icon display, relative positioning, animation\n- Props: player ID, approximate position, status, privacy level\n- Privacy: Obfuscated coordinates, zone-based display\n\nTECHNICAL STACK:\n- React 19 with TypeScript\n- Next.js 15.3.4\n- Tailwind CSS 4 for styling\n- HTML5 Canvas for map rendering\n- SVG for zone boundaries\n- Geolocation API for location tracking\n- Privacy-first approach for all location data",
+      "type": "string",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-20T19:30:06.586Z",
+      "updatedAt": "2025-06-20T19:30:06.586Z",
+      "lastAccessedAt": "2025-06-20T19:38:49.265Z",
+      "version": 1,
+      "size": 1887,
+      "compressed": true,
+      "checksum": "8a041bc485f624951b633c0a334c43564c370368f9e2194436010fbb9ad98868",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mc57jadr_pqys87vkx",
+      "key": "ui_architecture_specs",
+      "value": "\"# ZK Shroud Arena UI Architecture Specifications\\n\\n## Overall Layout Structure\\n- **Layout Type**: CSS Grid with mobile-first responsive design\\n- **Main Grid**: \\n  - Mobile: `grid-rows-[auto_1fr_auto]` (header, game area, controls)\\n  - Desktop: `grid-rows-[auto_1fr] grid-cols-[1fr_300px]` (header spans full width, game area + sidebar)\\n\\n## Component Architecture\\n\\n### 1. Layout Components (/src/frontend/src/app/layout.tsx)\\n- **RootLayout**: Global layout with ZK Shroud Arena branding\\n- **Metadata**: SEO optimized for gaming, dark theme defaults\\n- **Fonts**: Geist Sans & Geist Mono for modern technical feel\\n- **Theme**: Dark gaming theme with CSS variables\\n\\n### 2. Main Game Page (/src/frontend/src/app/page.tsx)\\n- **ZKShroudArena**: Main game container component\\n- **State Management**: React useState for game state\\n- **Real-time Updates**: useEffect for arena timer countdown\\n\\n### 3. Game Layout Sections\\n\\n#### Header Section (GameHeader)\\n- **Purpose**: Player stats, arena timer, game status\\n- **Layout**: Flexbox with responsive wrapping\\n- **Components**:\\n  - Game title with stealth status indicator\\n  - Arena countdown timer (MM:SS format)\\n  - Player stats (Health, Energy, Score)\\n- **Responsive**: Stacks vertically on mobile, horizontal on desktop\\n\\n#### Main Game Area (GameMap)\\n- **Purpose**: Primary game visualization and interaction\\n- **Layout**: Absolute positioning for game elements\\n- **Features**:\\n  - Tactical grid overlay (40px grid)\\n  - Player/enemy position markers\\n  - Stealth radius visualization\\n  - Mini-map (desktop only)\\n- **Styling**: Dark gradient background with glass morphism effects\\n\\n#### Control Panel (GameControls)\\n- **Purpose**: Action buttons and status monitoring\\n- **Layout**: Sidebar on desktop, bottom panel on mobile\\n- **Sections**:\\n  - Action buttons (Stealth, Attack, Move, Defend)\\n  - Status bars (Health, Energy)\\n  - Enemy detection counter\\n  - ZK proof status (desktop only)\\n\\n## Design System\\n\\n### Color Palette\\n- **Primary**: Cyan (#06b6d4) - Player indicators, primary actions\\n- **Secondary**: Purple (#8b5cf6) - Stealth mode, ZK cryptography\\n- **Success**: Green (#10b981) - Health, success states\\n- **Warning**: Amber (#f59e0b) - Arena timer, warnings\\n- **Danger**: Red (#ef4444) - Enemies, danger states\\n- **Backgrounds**: Gray-900 to Gray-800 gradients\\n\\n### Typography\\n- **Primary Font**: Geist Sans (clean, modern)\\n- **Monospace**: Geist Mono (technical data, timers)\\n- **Hierarchy**: \\n  - H1: Game title (text-xl, tracking-wider)\\n  - Stats: text-lg, font-bold\\n  - Labels: text-xs, uppercase, tracking-wide\\n\\n### Spacing & Layout\\n- **Grid Gap**: 8px (gap-2) for tight gaming layout\\n- **Padding**: 16px (p-4) for main containers\\n- **Border Radius**: 8px (rounded-lg) for modern feel\\n- **Borders**: Semi-transparent gray with glass effects\\n\\n### Interactive Elements\\n- **Buttons**: Hover scale effects (scale-105)\\n- **Status Indicators**: Animated pulse effects\\n- **Transitions**: 200ms ease-in-out for smooth interactions\\n\\n## Responsive Design\\n\\n### Mobile (< 768px)\\n- **Layout**: Vertical stack (header, game, controls)\\n- **Controls**: 2-column grid for action buttons\\n- **Typography**: Smaller text sizes (text-sm)\\n- **Hidden Elements**: Mini-map, ZK status panel\\n\\n### Desktop (≥ 1024px)\\n- **Layout**: Header + sidebar layout\\n- **Controls**: Single column with full feature set\\n- **Additional Features**: Mini-map, detailed ZK status\\n- **Typography**: Full size hierarchy\\n\\n## Component Planning for Future Development\\n\\n### Immediate Next Components\\n1. **GameHeader**: Extract header logic into reusable component\\n2. **GameMap**: Separate map rendering and interaction logic\\n3. **GameControls**: Modular control panel with plugin actions\\n4. **StatusBar**: Reusable progress bar component\\n5. **ActionButton**: Standardized game action button\\n\\n### Advanced Components (Future)\\n1. **GameLobby**: Pre-game waiting area\\n2. **GameSettings**: Configuration panel\\n3. **GameStats**: Post-game statistics\\n4. **PlayerProfile**: User profile and achievements\\n5. **GameChat**: Real-time communication\\n6. **ZKProofViewer**: Detailed cryptographic proof display\\n\\n### State Management Architecture\\n- **Current**: Local useState for prototype\\n- **Future**: \\n  - Context API for global game state\\n  - WebSocket integration for real-time updates\\n  - ZK proof state management\\n  - Player session persistence\\n\\n## Accessibility Features\\n- **Semantic HTML**: Proper heading hierarchy, landmarks\\n- **ARIA Labels**: Screen reader support for game elements\\n- **Keyboard Navigation**: Tab order for all interactive elements\\n- **Color Contrast**: WCAG AA compliance for text readability\\n- **Reduced Motion**: Respect prefers-reduced-motion settings\\n\\n## Performance Considerations\\n- **CSS Grid**: Efficient layout with minimal JavaScript\\n- **Component Splitting**: Code splitting for larger components\\n- **Memoization**: React.memo for expensive re-renders\\n- **Lazy Loading**: Defer non-critical game assets\\n- **WebGL Prep**: Structure ready for 3D game rendering\\n\\n## Integration Points\\n- **Backend API**: Ready for /prove and /verify endpoints\\n- **WebSocket**: Real-time game state synchronization\\n- **ZK Proofs**: Placeholder for cryptographic integration\\n- **Game Engine**: Modular structure for game logic injection\\n\\nThis architecture provides a solid foundation for the ZK Shroud Arena game interface while maintaining flexibility for future enhancements and integrations.\"",
+      "type": "string",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-20T19:33:06.255Z",
+      "updatedAt": "2025-06-20T19:33:06.255Z",
+      "lastAccessedAt": "2025-06-20T19:33:06.255Z",
+      "version": 1,
+      "size": 5715,
+      "compressed": true,
+      "checksum": "944edd26897c2f1d981ef261546265d0ef1d935ebdd09f2e187481097760c317",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mc57jmpe_smxfiuxri",
+      "key": "game_state_specs",
+      "value": "\"ZK Shroud Arena Game State Management System\\n\\n## Architecture Overview\\n- React Context-based state management with useReducer\\n- Comprehensive TypeScript interfaces for type safety\\n- Custom hooks for different aspects of game state\\n- State persistence with localStorage\\n- Real-time updates support\\n\\n## Core Components\\n\\n### 1. Types System (/Users/nuttakit/project/zk/zkth-zkhack2025/src/frontend/src/types/gameState.ts)\\n- PlayerState: location, health, proof status, activity tracking\\n- ArenaState: zone management, shrinking mechanics, boundaries\\n- GamePhaseState: phase management, timers, player count\\n- ZKProofState: proof validation, history, cooldowns\\n- RealtimeState: connection status, updates, latency\\n- Complete GameState: combines all sub-states\\n\\n### 2. Context Provider (/Users/nuttakit/project/zk/zkth-zkhack2025/src/frontend/src/contexts/GameContext.tsx)\\n- GameContextProvider with configurable options\\n- State reducer with 10 action types\\n- Auto-save and hydration functionality\\n- Timer management and phase transitions\\n- Utility functions for game calculations\\n\\n### 3. Custom Hooks (/Users/nuttakit/project/zk/zkth-zkhack2025/src/frontend/src/hooks/useGameState.ts)\\n- useGameState: Main hook for full state access\\n- usePlayerState: Player-specific actions and state\\n- useArenaState: Arena management and zone calculations\\n- useZKProofState: ZK proof generation and validation\\n- useGamePhase: Game phase and timer management\\n- useRealtimeState: Connection and update handling\\n- useGameStats: Analytics and statistics\\n- useGamePersistence: State save/load functionality\\n- useGameDebug: Development and debugging tools\\n\\n## State Management Features\\n- Immutable state updates with proper TypeScript typing\\n- Action-based state mutations with timestamps\\n- State persistence to localStorage with versioning\\n- Real-time connection status monitoring\\n- Automatic timer and phase progression\\n- ZK proof lifecycle management\\n- Player location and health tracking\\n- Arena zone shrinking mechanics\\n\\n## Integration Points\\n- Ready for WebSocket integration for real-time updates\\n- ZK proof generation/validation hook points\\n- State export/import functionality\\n- Debug tools for development\\n- Performance optimized with useMemo and useCallback\\n- Error handling and validation built-in\\n\\n## Usage Pattern\\n1. Wrap app with GameContextProvider\\n2. Use specific hooks in components (usePlayerState, useArenaState, etc.)\\n3. Actions automatically trigger state updates\\n4. State persistence happens automatically\\n5. Real-time updates can be integrated via WebSocket connections\\n\\nThis system provides complete game state management for the ZK Shroud Arena with TypeScript safety, performance optimization, and extensibility for future features.\"",
+      "type": "string",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-20T19:33:22.226Z",
+      "updatedAt": "2025-06-20T19:33:22.226Z",
+      "lastAccessedAt": "2025-06-20T19:33:22.226Z",
+      "version": 1,
+      "size": 2891,
+      "compressed": true,
+      "checksum": "ef64a8460c4974fce34e01ba9818a75959b5c13c3f002b281600be4c34bf307b",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mc57ky09_husflty1s",
+      "key": "testing_specs",
+      "value": "\"ZK Gaming Application Testing Infrastructure\\n\\n## Test Framework Configuration\\n- **Framework**: Jest 29.7.0 with jsdom environment\\n- **React Testing**: @testing-library/react 14.0.0\\n- **User Events**: @testing-library/user-event 14.5.0\\n- **E2E Testing**: Playwright 1.40.0\\n- **TypeScript Support**: ts-jest 29.1.0\\n\\n## File Structure\\n- /src/frontend/jest.config.js - Main Jest configuration\\n- /src/frontend/src/__tests__/setup.ts - Test setup and utilities\\n- /src/frontend/src/__mocks__/zkProofService.ts - ZK proof service mocks\\n- /src/frontend/src/__tests__/integration/zkProofFlow.test.ts - Integration tests\\n\\n## Test Scripts (package.json)\\n- npm run test - Run all tests\\n- npm run test:watch - Watch mode testing\\n- npm run test:coverage - Coverage reporting\\n- npm run test:ci - CI/CD optimized testing\\n\\n## ZK Proof Testing Features\\n- Mock ZK proof generation with deterministic results\\n- Game state proof workflow testing\\n- Batch proof processing tests\\n- Blockchain integration simulation\\n- Circuit management mocking\\n- Performance and load testing utilities\\n\\n## Coverage Requirements\\n- Branches: 70%\\n- Functions: 70% \\n- Lines: 70%\\n- Statements: 70%\\n\\n## Special Test Utilities\\n- zkTestUtils for ZK proof testing\\n- Custom Jest matchers (toBeValidProof, toHaveValidGameState)\\n- WebAssembly and crypto mocking\\n- Game state simulation helpers\\n- Network request mocking\\n\\n## Integration Test Coverage\\n- Basic proof generation and verification\\n- Game state proof workflows\\n- Batch processing capabilities\\n- Blockchain submission flows\\n- Circuit loading and management\\n- Error handling and edge cases\\n- Performance under load\\n- Multi-player game scenarios\\n\\n## Mock Service Capabilities\\n- Deterministic proof generation\\n- Configurable failure scenarios\\n- Adjustable operation delays\\n- Batch operation support\\n- Blockchain status simulation\\n- Circuit information mocking\\n\\nThis testing infrastructure provides comprehensive coverage for ZK gaming application workflows with realistic mocking and integration testing capabilities.\"",
+      "type": "string",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-20T19:34:23.529Z",
+      "updatedAt": "2025-06-20T19:34:23.529Z",
+      "lastAccessedAt": "2025-06-20T19:34:23.529Z",
+      "version": 1,
+      "size": 2174,
+      "compressed": true,
+      "checksum": "9067dcb2ce71db2771260b99a432650290057295aa5c5530e59655c9fac244e1",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mc57nst6_ckyek7oq7",
+      "key": "frontend_only_policy",
+      "value": "CRITICAL: All agents must work ONLY on frontend code in src/frontend/. Backend runs at localhost:8080. NEVER touch Rust files or src/backend/",
+      "type": "string",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-20T19:36:36.762Z",
+      "updatedAt": "2025-06-20T19:36:36.762Z",
+      "lastAccessedAt": "2025-06-20T19:36:36.762Z",
+      "version": 1,
+      "size": 172,
+      "compressed": false,
+      "checksum": "34b54efe83f0ceb3a9cc39bd7e1ffe3740d7875cb36bb60bdcdc47c0031c4628",
+      "references": [],
+      "dependencies": []
+    }
+  ],
+  "statistics": {
+    "overview": {
+      "totalEntries": 6,
+      "totalSize": 13189,
+      "compressedEntries": 4,
+      "compressionRatio": -23.266283524904214,
+      "indexSize": 300,
+      "memoryUsage": 9212312,
+      "diskUsage": 0
+    },
+    "distribution": {
+      "byNamespace": {
+        "default": {
+          "count": 6,
+          "size": 13189
+        }
+      },
+      "byType": {
+        "string": {
+          "count": 6,
+          "size": 13189
+        }
+      },
+      "byOwner": {
+        "system": {
+          "count": 6,
+          "size": 13189
+        }
+      },
+      "byAccessLevel": {
+        "shared": {
+          "count": 6,
+          "size": 13189
+        }
+      }
+    },
+    "temporal": {
+      "entriesCreatedLast24h": 6,
+      "entriesUpdatedLast24h": 6,
+      "entriesAccessedLast24h": 6,
+      "oldestEntry": "2025-06-20T19:29:57.045Z",
+      "newestEntry": "2025-06-20T19:36:36.762Z"
+    },
+    "performance": {
+      "averageQueryTime": 0,
+      "averageWriteTime": 0,
+      "cacheHitRatio": 0,
+      "indexEfficiency": 0.95
+    },
+    "health": {
+      "expiredEntries": 0,
+      "orphanedReferences": 0,
+      "duplicateKeys": 0,
+      "corruptedEntries": 0,
+      "recommendedCleanup": false
+    },
+    "optimization": {
+      "suggestions": [],
+      "potentialSavings": {
+        "compression": 0,
+        "cleanup": 0,
+        "deduplication": 0
+      },
+      "indexOptimization": [
+        "Consider periodic index rebuilding for optimal performance"
+      ]
+    }
+  }
+}
