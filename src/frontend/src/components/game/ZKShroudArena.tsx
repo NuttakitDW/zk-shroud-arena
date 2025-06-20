@@ -2,19 +2,20 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Shield, MapPin, Users, Clock, Heart, Zap, Target, Info } from 'lucide-react';
-import { GameEngine, GameEngineConfig } from './GameEngine';
+import { GameEngine } from './GameEngine';
 import { GameContextProvider, useGameContext } from '../../contexts/GameContext';
 import { GameMap } from '../Map/GameMap';
 import { ArenaZone } from '../Map/ArenaZone';
 import { Coordinates, GamePhase, ZKProofStatus } from '../../types/gameState';
+import { Player } from '../Map/types';
 
 interface GameHUDProps {
   gameEngine: GameEngine;
   onMove: (position: Coordinates) => void;
 }
 
-const GameHUD: React.FC<GameHUDProps> = ({ gameEngine, onMove }) => {
-  const { state, actions } = useGameContext();
+const GameHUD: React.FC<GameHUDProps> = ({ gameEngine }) => {
+  const { state } = useGameContext();
   const [gameStats, setGameStats] = useState({
     playersAlive: 1,
     gameTime: 0,
@@ -209,10 +210,10 @@ interface ZKShroudArenaGameProps {
   gameId?: string;
 }
 
-const ZKShroudArenaGame: React.FC<ZKShroudArenaGameProps> = ({ gameId = 'arena-game' }) => {
+const ZKShroudArenaGame: React.FC<ZKShroudArenaGameProps> = () => {
   const gameEngineRef = useRef<GameEngine | null>(null);
   const [isGameStarted, setIsGameStarted] = useState(false);
-  const [botPlayers, setBotPlayers] = useState<any[]>([]);
+  const [botPlayers, setBotPlayers] = useState<Player[]>([]);
   const { state, actions } = useGameContext();
 
   // Initialize game engine
@@ -221,8 +222,16 @@ const ZKShroudArenaGame: React.FC<ZKShroudArenaGameProps> = ({ gameId = 'arena-g
       console.log('🚀 Initializing Game Engine...');
       
       const gameUpdater = (updater: (state: any) => any) => {
-        // This is a simplified game state updater
-        // In a real implementation, this would integrate with the game context
+        // Integration with game context
+        const currentState = state;
+        const newState = updater(currentState);
+        
+        // Apply any state changes if needed
+        if (newState.arenaState?.h3Map && newState.arenaState.h3Map !== currentState.arenaState?.h3Map) {
+          console.log('📍 H3 map received in game state');
+        }
+        
+        return newState;
       };
       
       gameEngineRef.current = new GameEngine({
@@ -232,15 +241,23 @@ const ZKShroudArenaGame: React.FC<ZKShroudArenaGameProps> = ({ gameId = 'arena-g
         botCount: 15,
         enableRealtime: false, // Disable for demo
         zkSettings: {
-          proofRequired: false, // Disable for demo
+          proofRequired: true, // Enable ZK proof
           proofInterval: 60000,
           h3Resolution: 9
         }
       }, gameUpdater);
       
-      gameEngineRef.current.initialize();
+      // Initialize the engine and request h3Map
+      gameEngineRef.current.initialize().then(() => {
+        console.log('✅ Game Engine initialized successfully');
+        
+        // Request H3 map from server after initialization
+        if (gameEngineRef.current) {
+          gameEngineRef.current.requestH3MapFromServer();
+        }
+      });
     }
-  }, []);
+  }, [state]);
 
   // Update bot positions for rendering
   useEffect(() => {
@@ -251,7 +268,7 @@ const ZKShroudArenaGame: React.FC<ZKShroudArenaGameProps> = ({ gameId = 'arena-g
       setBotPlayers(bots.map(bot => ({
         id: bot.id,
         position: bot.position,
-        status: bot.isAlive ? 'active' : 'eliminated'
+        status: bot.isAlive ? 'active' as const : 'eliminated' as const
       })));
     }, 1000);
     
@@ -263,7 +280,7 @@ const ZKShroudArenaGame: React.FC<ZKShroudArenaGameProps> = ({ gameId = 'arena-g
       console.log('🎮 Starting game...');
       
       // Spawn player
-      const spawnPoint = gameEngineRef.current.spawnPlayer('player-1');
+      gameEngineRef.current.spawnPlayer('player-1');
       
       // Start the game
       gameEngineRef.current.startGame();
@@ -277,8 +294,17 @@ const ZKShroudArenaGame: React.FC<ZKShroudArenaGameProps> = ({ gameId = 'arena-g
     if (gameEngineRef.current && isGameStarted) {
       console.log(`🏃 Moving player to (${position.x}, ${position.y})`);
       
+      // Check if we have h3Map data
+      const hasH3Map = state.arenaState.h3Map && state.arenaState.h3Map.length > 0;
+      
+      if (!hasH3Map) {
+        console.warn('⚠️ Cannot move yet - waiting for arena map data from server');
+        alert('Waiting for arena map data from server. Please try again in a moment.');
+        return;
+      }
+      
       // Move player with ZK proof validation
-      const result = await gameEngineRef.current.movePlayer('player-1', position, false);
+      const result = await gameEngineRef.current.movePlayer('player-1', position, true); // Enable proof generation
       
       if (result.success) {
         console.log('✅ Player moved successfully');
@@ -295,11 +321,11 @@ const ZKShroudArenaGame: React.FC<ZKShroudArenaGameProps> = ({ gameId = 'arena-g
   }, [isGameStarted, actions]);
 
   // Create player list for map rendering
-  const allPlayers = [
+  const allPlayers: Player[] = [
     {
       id: 'player-1',
-      position: state.playerState.location,
-      status: state.playerState.isAlive ? 'active' : 'eliminated' as const,
+      position: { x: state.playerState.location.x, y: state.playerState.location.y },
+      status: state.playerState.isAlive ? 'active' as const : 'eliminated' as const,
       isCurrentPlayer: true
     },
     ...botPlayers
@@ -323,7 +349,7 @@ const ZKShroudArenaGame: React.FC<ZKShroudArenaGameProps> = ({ gameId = 'arena-g
         width: state.arenaState.currentZone.radius * 2,
         height: state.arenaState.currentZone.radius * 2
       },
-      type: state.gamePhase.phase === GamePhase.ZONE_SHRINKING ? 'shrinking' : 'safe' as const,
+      type: state.gamePhase.phase === GamePhase.ZONE_SHRINKING ? 'shrinking' as const : 'safe' as const,
       shrinkProgress: state.gamePhase.phase === GamePhase.ZONE_SHRINKING ? 0.5 : undefined,
       timeRemaining: state.gamePhase.phase === GamePhase.ZONE_SHRINKING ? 
         Math.floor(state.gamePhase.timer.remainingTime / 1000) : undefined
@@ -378,8 +404,8 @@ const ZKShroudArenaGame: React.FC<ZKShroudArenaGameProps> = ({ gameId = 'arena-g
       {/* Game Map */}
       <div className="absolute inset-0">
         <GameMap
-          width={window.innerWidth}
-          height={window.innerHeight}
+          width={typeof window !== 'undefined' ? window.innerWidth : 1920}
+          height={typeof window !== 'undefined' ? window.innerHeight : 1080}
           arenaBounds={arenaBounds}
           players={allPlayers}
           showGrid={true}
@@ -392,8 +418,8 @@ const ZKShroudArenaGame: React.FC<ZKShroudArenaGameProps> = ({ gameId = 'arena-g
         <div className="absolute inset-0 pointer-events-none">
           <ArenaZone
             zones={zones}
-            width={window.innerWidth}
-            height={window.innerHeight}
+            width={typeof window !== 'undefined' ? window.innerWidth : 1920}
+            height={typeof window !== 'undefined' ? window.innerHeight : 1080}
             showLabels={true}
             showTimers={true}
             animated={true}
