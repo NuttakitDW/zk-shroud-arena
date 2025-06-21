@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZK HACK Letter Drawing Guide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #60a5fa;
+        }
+        .letter-grid {
+            display: inline-block;
+            margin: 20px;
+            vertical-align: top;
+        }
+        .letter-title {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #60a5fa;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 30px);
+            gap: 2px;
+            background-color: #333;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            background-color: #555;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .filled {
+            background-color: #60a5fa;
+        }
+        .tips {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .tip {
+            margin: 10px 0;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #60a5fa;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        button:hover {
+            background-color: #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗺️ Drawing "ZK HACK" with Zones</h1>
+    
+    <div style="text-align: center;">
+        <div class="letter-grid">
+            <div class="letter-title">Z</div>
+            <div class="grid" id="z-grid"></div>
+        </div>
+        
+        <div class="letter-grid">
+            <div class="letter-title">K</div>
+            <div class="grid" id="k-grid"></div>
+        </div>
+        
+        <div class="letter-grid">
+            <div class="letter-title">H</div>
+            <div class="grid" id="h-grid"></div>
+        </div>
+        
+        <div class="letter-grid">
+            <div class="letter-title">A</div>
+            <div class="grid" id="a-grid"></div>
+        </div>
+        
+        <div class="letter-grid">
+            <div class="letter-title">C</div>
+            <div class="grid" id="c-grid"></div>
+        </div>
+        
+        <div class="letter-grid">
+            <div class="letter-title">K</div>
+            <div class="grid" id="k2-grid"></div>
+        </div>
+    </div>
+
+    <div class="tips">
+        <h2>📝 Tips for Drawing Letters on the Map:</h2>
+        <div class="tip">1. <strong>Use "Precise" size (10m)</strong> - This gives you the finest control for drawing letters</div>
+        <div class="tip">2. <strong>Enable "Add neighbor cells"</strong> - This makes it easier to draw connected lines</div>
+        <div class="tip">3. <strong>Start from the top</strong> - Draw each letter from top to bottom for consistency</div>
+        <div class="tip">4. <strong>Leave space between letters</strong> - Skip 2-3 cells between each letter for readability</div>
+        <div class="tip">5. <strong>Use the eraser</strong> - Don't worry about mistakes, you can easily erase and redraw</div>
+        <div class="tip">6. <strong>Zoom in</strong> - Zoom the map to level 17-18 for precise placement</div>
+        <div class="tip">7. <strong>Plan your layout</strong> - Consider drawing "ZK" on one line and "HACK" below it if space is tight</div>
+    </div>
+
+    <script>
+        // Letter patterns (1 = filled, 0 = empty)
+        const letters = {
+            z: [
+                [1,1,1,1,1],
+                [0,0,0,1,0],
+                [0,0,1,0,0],
+                [0,1,0,0,0],
+                [1,1,1,1,1]
+            ],
+            k: [
+                [1,0,0,1,0],
+                [1,0,1,0,0],
+                [1,1,0,0,0],
+                [1,0,1,0,0],
+                [1,0,0,1,0]
+            ],
+            h: [
+                [1,0,0,0,1],
+                [1,0,0,0,1],
+                [1,1,1,1,1],
+                [1,0,0,0,1],
+                [1,0,0,0,1]
+            ],
+            a: [
+                [0,1,1,1,0],
+                [1,0,0,0,1],
+                [1,1,1,1,1],
+                [1,0,0,0,1],
+                [1,0,0,0,1]
+            ],
+            c: [
+                [0,1,1,1,0],
+                [1,0,0,0,1],
+                [1,0,0,0,0],
+                [1,0,0,0,1],
+                [0,1,1,1,0]
+            ]
+        };
+
+        // Create grids
+        function createGrid(pattern, gridId) {
+            const grid = document.getElementById(gridId);
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 5; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    if (pattern[row][col] === 1) {
+                        cell.classList.add('filled');
+                    }
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        // Initialize all letter grids
+        createGrid(letters.z, 'z-grid');
+        createGrid(letters.k, 'k-grid');
+        createGrid(letters.h, 'h-grid');
+        createGrid(letters.a, 'a-grid');
+        createGrid(letters.c, 'c-grid');
+        createGrid(letters.k, 'k2-grid');
+    </script>
+</body>
+</html>

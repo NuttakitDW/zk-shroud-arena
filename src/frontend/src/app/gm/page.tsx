@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { MapPin, Users, Radio, Save } from 'lucide-react';
+import { MapPin, Users, Radio, Save, AlertCircle, Navigation } from 'lucide-react';
 import { H3Zone } from '../../components/Map/types';
 
 // Dynamic import to prevent SSR issues with Leaflet
@@ -25,6 +25,8 @@ export default function GameManagerPage() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'checking'>('checking');
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   // Load existing zones on mount and request location
   useEffect(() => {
@@ -33,18 +35,11 @@ export default function GameManagerPage() {
       setZones(JSON.parse(savedZones));
     }
 
-    // Request location on mount
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation([position.coords.latitude, position.coords.longitude]);
-          setLocationEnabled(true);
-        },
-        (error) => {
-          console.error('Location error:', error);
-        }
-      );
-    }
+    // Check location permission status
+    checkLocationPermission();
+    
+    // Request location on mount if permission is granted
+    requestLocation();
 
     // Simulate player count
     const interval = setInterval(() => {
@@ -56,6 +51,69 @@ export default function GameManagerPage() {
 
     return () => clearInterval(interval);
   }, []);
+
+  const checkLocationPermission = async () => {
+    if ('permissions' in navigator) {
+      try {
+        const result = await navigator.permissions.query({ name: 'geolocation' });
+        setLocationPermission(result.state as any);
+        
+        // Listen for permission changes
+        result.addEventListener('change', () => {
+          setLocationPermission(result.state as any);
+          if (result.state === 'granted') {
+            requestLocation();
+          }
+        });
+      } catch (error) {
+        console.error('Permission check error:', error);
+        setLocationPermission('prompt');
+      }
+    } else {
+      setLocationPermission('prompt');
+    }
+  };
+
+  const requestLocation = () => {
+    setLocationError(null);
+    
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation([position.coords.latitude, position.coords.longitude]);
+        setLocationEnabled(true);
+        setLocationError(null);
+      },
+      (error) => {
+        console.error('Location error:', error);
+        setLocationEnabled(false);
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocationError('Location permission denied. Please enable location access to center the map on your position.');
+            setLocationPermission('denied');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setLocationError('Location information is unavailable.');
+            break;
+          case error.TIMEOUT:
+            setLocationError('Location request timed out.');
+            break;
+          default:
+            setLocationError('An unknown error occurred.');
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 30000
+      }
+    );
+  };
 
   const handleZonesChange = (newZones: H3Zone[]) => {
     setZones(newZones);
@@ -84,12 +142,6 @@ export default function GameManagerPage() {
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold text-purple-400">Game Manager View</h1>
             <span className="text-sm text-gray-400">You control the battlefield - spawn zones anywhere!</span>
-            {locationEnabled && (
-              <span className="text-sm text-green-400 flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                Map centered on your location
-              </span>
-            )}
           </div>
           
           <div className="flex items-center gap-6">
@@ -118,6 +170,70 @@ export default function GameManagerPage() {
           </div>
         </div>
       </header>
+
+      {/* Location Permission Banner */}
+      {locationPermission !== 'granted' && (
+        <div className="bg-gray-800 border-b border-gray-700 p-4">
+          <div className="max-w-7xl mx-auto">
+            <div className={`rounded-lg p-4 ${
+              locationPermission === 'denied' ? 'bg-red-500/10 border border-red-500/30' : 'bg-yellow-500/10 border border-yellow-500/30'
+            }`}>
+              <div className="flex items-start gap-3">
+                <AlertCircle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
+                  locationPermission === 'denied' ? 'text-red-400' : 'text-yellow-400'
+                }`} />
+                <div className="flex-1">
+                  <h3 className={`font-semibold mb-1 ${
+                    locationPermission === 'denied' ? 'text-red-400' : 'text-yellow-400'
+                  }`}>
+                    {locationPermission === 'denied' ? 'Location Access Denied' : 'Location Access Required'}
+                  </h3>
+                  <p className="text-sm text-gray-300 mb-3">
+                    {locationPermission === 'denied' 
+                      ? 'Location access is required to center the map on your position. The map will use a default location.'
+                      : 'Enable location access to center the map on your current position and create zones around you.'}
+                  </p>
+                  {locationError && (
+                    <p className="text-sm text-gray-400 mb-3">{locationError}</p>
+                  )}
+                  <button
+                    onClick={requestLocation}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      locationPermission === 'denied' 
+                        ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400' 
+                        : 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400'
+                    }`}
+                  >
+                    <Navigation className="w-4 h-4" />
+                    {locationPermission === 'denied' ? 'Try Again' : 'Enable Location'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Location Success Banner */}
+      {locationEnabled && (
+        <div className="bg-gray-800 border-b border-gray-700 p-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="rounded-lg p-3 bg-green-500/10 border border-green-500/30">
+              <div className="flex items-center gap-3">
+                <MapPin className="w-5 h-5 text-green-400" />
+                <div>
+                  <p className="text-sm text-green-400 font-medium">
+                    Location enabled - Map centered on your position
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    You can now create zones around your current location
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 flex">
@@ -194,6 +310,7 @@ export default function GameManagerPage() {
             existingZones={zones}
             height="100%"
             defaultCenter={userLocation || [13.7563, 100.5018]}
+            locationEnabled={true}
           />
           
           {/* Demo Notice */}

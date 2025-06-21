@@ -25,7 +25,8 @@ const H3ClickHandler: React.FC<{
   addNeighbors: boolean;
   zones: H3Zone[];
   onZonesChange?: (zones: H3Zone[]) => void;
-}> = ({ resolution, addNeighbors, zones, onZonesChange }) => {
+  eraserMode?: boolean;
+}> = ({ resolution, addNeighbors, zones, onZonesChange, eraserMode = false }) => {
   useMapEvents({
     click: (e) => {
       // Only handle clicks if onZonesChange is provided
@@ -34,31 +35,37 @@ const H3ClickHandler: React.FC<{
       const { lat, lng } = e.latlng;
       const h3Index = h3.latLngToCell(lat, lng, resolution);
       
-      // Get the cells to add
-      let cellsToAdd = [h3Index];
-      if (addNeighbors) {
-        const neighbors = h3.gridDisk(h3Index, 1);
-        cellsToAdd = neighbors;
+      if (eraserMode) {
+        // In eraser mode, remove the clicked zone
+        const updatedZones = zones.filter(zone => zone.h3Index !== h3Index);
+        onZonesChange(updatedZones);
+      } else {
+        // Get the cells to add
+        let cellsToAdd = [h3Index];
+        if (addNeighbors) {
+          const neighbors = h3.gridDisk(h3Index, 1);
+          cellsToAdd = neighbors;
+        }
+        
+        // Create new zones
+        const newZones = cellsToAdd
+          .filter(cell => !zones.some(z => z.h3Index === cell))
+          .map(cell => {
+            const [centerLat, centerLng] = h3.cellToLatLng(cell);
+            return {
+              id: `zone-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              h3Index: cell,
+              name: `Zone ${zones.length + 1}`,
+              type: 'safe' as const,
+              center: { latitude: centerLat, longitude: centerLng },
+              pointValue: 1,
+              createdAt: Date.now(),
+              updatedAt: Date.now()
+            };
+          });
+        
+        onZonesChange([...zones, ...newZones]);
       }
-      
-      // Create new zones
-      const newZones = cellsToAdd
-        .filter(cell => !zones.some(z => z.h3Index === cell))
-        .map(cell => {
-          const [centerLat, centerLng] = h3.cellToLatLng(cell);
-          return {
-            id: `zone-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            h3Index: cell,
-            name: `Zone ${zones.length + 1}`,
-            type: 'safe' as const,
-            center: { latitude: centerLat, longitude: centerLng },
-            pointValue: 1,
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-          };
-        });
-      
-      onZonesChange([...zones, ...newZones]);
     }
   });
   
@@ -66,7 +73,7 @@ const H3ClickHandler: React.FC<{
 };
 
 // H3 zone renderer component
-const H3ZoneRenderer: React.FC<{ zones: H3Zone[] }> = ({ zones }) => {
+const H3ZoneRenderer: React.FC<{ zones: H3Zone[]; eraserMode?: boolean }> = ({ zones, eraserMode = false }) => {
   const map = useMapEvents({});
   
   React.useEffect(() => {
@@ -83,16 +90,16 @@ const H3ZoneRenderer: React.FC<{ zones: H3Zone[] }> = ({ zones }) => {
       const latLngs = boundary.map(([lat, lng]) => [lat, lng] as [number, number]);
       
       const polygon = L.polygon(latLngs, {
-        color: '#3b82f6',
-        fillColor: '#60a5fa',
-        fillOpacity: 0.4,
+        color: eraserMode ? '#ef4444' : '#3b82f6',
+        fillColor: eraserMode ? '#fca5a5' : '#60a5fa',
+        fillOpacity: eraserMode ? 0.6 : 0.4,
         weight: 2
       });
       
       (polygon as any).isH3Zone = true;
       polygon.addTo(map);
     });
-  }, [zones, map]);
+  }, [zones, map, eraserMode]);
   
   return null;
 };
@@ -181,6 +188,7 @@ const SimpleH3Map: React.FC<SimpleH3MapProps> = ({
   const [zones, setZones] = useState<H3Zone[]>(existingZones);
   const [resolution, setResolution] = useState(11); // Default to "Building" size (~25m)
   const [addNeighbors, setAddNeighbors] = useState(false);
+  const [eraserMode, setEraserMode] = useState(false);
 
   // Update zones when existingZones change
   React.useEffect(() => {
@@ -203,7 +211,7 @@ const SimpleH3Map: React.FC<SimpleH3MapProps> = ({
         center={defaultCenter}
         zoom={defaultZoom}
         style={{ height: '100%', width: '100%' }}
-        className="z-0"
+        className={`z-0 ${eraserMode ? 'cursor-crosshair' : ''}`}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -215,9 +223,10 @@ const SimpleH3Map: React.FC<SimpleH3MapProps> = ({
           addNeighbors={addNeighbors}
           zones={zones}
           onZonesChange={handleZonesChange}
+          eraserMode={eraserMode}
         />
         
-        <H3ZoneRenderer zones={zones} />
+        <H3ZoneRenderer zones={zones} eraserMode={eraserMode} />
         
         <LocationTracker 
           enabled={locationEnabled}
@@ -231,7 +240,9 @@ const SimpleH3Map: React.FC<SimpleH3MapProps> = ({
           onResolutionChange={setResolution}
           onAddNeighborsChange={setAddNeighbors}
           onClear={handleClear}
+          onEraserModeChange={setEraserMode}
           hasZones={zones.length > 0}
+          eraserMode={eraserMode}
         />
       )}
     </div>

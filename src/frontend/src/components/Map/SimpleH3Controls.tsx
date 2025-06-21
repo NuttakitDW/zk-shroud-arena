@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { X, MapPin, Building, Map, Users } from 'lucide-react';
+import { X, MapPin, Building, Map, Users, Eraser, PlusCircle } from 'lucide-react';
 
 interface SimpleH3ControlsProps {
   onResolutionChange: (resolution: number) => void;
   onAddNeighborsChange: (add: boolean) => void;
   onClear: () => void;
+  onEraserModeChange?: (enabled: boolean) => void;
   currentResolution: number;
   hasZones: boolean; // Disable size change if zones exist
+  eraserMode?: boolean;
 }
 
 const H3_SIZES = [
@@ -44,8 +46,10 @@ export const SimpleH3Controls: React.FC<SimpleH3ControlsProps> = ({
   onResolutionChange,
   onAddNeighborsChange,
   onClear,
+  onEraserModeChange,
   currentResolution,
-  hasZones
+  hasZones,
+  eraserMode = false
 }) => {
   const [addNeighbors, setAddNeighbors] = useState(false);
 
@@ -57,6 +61,7 @@ export const SimpleH3Controls: React.FC<SimpleH3ControlsProps> = ({
 
   const handleClear = () => {
     setAddNeighbors(false); // Reset checkbox when clearing
+    onEraserModeChange?.(false); // Exit eraser mode when clearing
     onClear();
   };
 
@@ -65,8 +70,10 @@ export const SimpleH3Controls: React.FC<SimpleH3ControlsProps> = ({
       <div className="bg-white rounded-lg shadow-lg p-4 min-w-[500px]">
         {/* Header */}
         <div className="text-center mb-4">
-          <p className="text-green-600 font-medium">Click on the map to draw geofence area</p>
-          {hasZones && (
+          <p className={`font-medium ${eraserMode ? 'text-red-600' : 'text-green-600'}`}>
+            {eraserMode ? 'Click on zones to erase them' : 'Click on the map to draw geofence area'}
+          </p>
+          {hasZones && !eraserMode && (
             <p className="text-sm text-gray-500 mt-1">
               Size locked to: {H3_SIZES.find(s => s.resolution === currentResolution)?.name} ({H3_SIZES.find(s => s.resolution === currentResolution)?.size})
             </p>
@@ -74,7 +81,7 @@ export const SimpleH3Controls: React.FC<SimpleH3ControlsProps> = ({
         </div>
 
         {/* Size Selection */}
-        {!hasZones && (
+        {!hasZones && !eraserMode && (
           <div className="mb-4">
             <h3 className="text-sm font-medium text-gray-700 text-center mb-3">Choose Geofence Size:</h3>
             <div className="flex justify-center gap-3">
@@ -110,16 +117,49 @@ export const SimpleH3Controls: React.FC<SimpleH3ControlsProps> = ({
 
         {/* Options */}
         <div className="flex items-center justify-between">
-          {/* Add neighbors checkbox */}
-          <label className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={addNeighbors}
-              onChange={handleAddNeighborsToggle}
-              className="mr-2"
-            />
-            <span className="text-sm text-gray-700">Add neighbor cells (makes geofence larger)</span>
-          </label>
+          <div className="flex items-center gap-3">
+            {/* Mode buttons - Show if we have zones OR if we're in eraser mode */}
+            {(hasZones || eraserMode) && onEraserModeChange && (
+              <>
+                {/* Draw mode button */}
+                {eraserMode && (
+                  <button
+                    onClick={() => onEraserModeChange(false)}
+                    className="flex items-center gap-1.5 px-4 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    <span className="text-sm font-medium">Draw Mode</span>
+                  </button>
+                )}
+
+                {/* Eraser mode button */}
+                <button
+                  onClick={() => onEraserModeChange(!eraserMode)}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md transition-colors ${
+                    eraserMode 
+                      ? 'bg-red-500 hover:bg-red-600 text-white' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300'
+                  }`}
+                >
+                  <Eraser className="w-4 h-4" />
+                  <span className="text-sm font-medium">{eraserMode ? 'Erasing Mode' : 'Eraser'}</span>
+                </button>
+              </>
+            )}
+
+            {/* Add neighbors checkbox */}
+            {!eraserMode && (
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={addNeighbors}
+                  onChange={handleAddNeighborsToggle}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-700">Add neighbor cells</span>
+              </label>
+            )}
+          </div>
 
           {/* Clear button */}
           <button
@@ -127,7 +167,7 @@ export const SimpleH3Controls: React.FC<SimpleH3ControlsProps> = ({
             className="flex items-center gap-1 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
           >
             <X className="w-4 h-4" />
-            <span className="text-sm">Clear</span>
+            <span className="text-sm">Clear All</span>
           </button>
         </div>
       </div>
