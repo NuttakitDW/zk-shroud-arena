@@ -1,24 +1,25 @@
 @import "tailwindcss";
+@import "../styles/tron-design-system.css";
 
 :root {
-  /* Gaming Dark Theme Colors */
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --background-secondary: #1a1a1a;
-  --background-tertiary: #2a2a2a;
+  /* Tron Gaming Dark Theme Colors */
+  --background: #000000; /* Pure black - Tron motto */
+  --foreground: #FFFFFF;
+  --background-secondary: #0A0A0A; /* Grid black */
+  --background-tertiary: #050810; /* Circuit dark */
   
-  /* Gaming Accent Colors */
-  --accent-primary: #06b6d4; /* cyan-500 */
-  --accent-secondary: #8b5cf6; /* violet-500 */
+  /* Tron Accent Colors */
+  --accent-primary: #00D9FF; /* Neon cyan */
+  --accent-secondary: #0096DB; /* Electric blue */
   --accent-success: #10b981; /* emerald-500 */
-  --accent-warning: #f59e0b; /* amber-500 */
-  --accent-danger: #ef4444; /* red-500 */
+  --accent-warning: #FF6B1A; /* Tron orange */
+  --accent-danger: #CC4400; /* Dark orange */
   
-  /* Gaming UI Colors */
-  --border-primary: rgba(75, 85, 99, 0.5); /* gray-600/50 */
-  --border-secondary: rgba(107, 114, 128, 0.3); /* gray-500/30 */
-  --glass-bg: rgba(31, 41, 55, 0.5); /* gray-800/50 */
-  --glass-border: rgba(107, 114, 128, 0.2); /* gray-500/20 */
+  /* Tron UI Colors */
+  --border-primary: rgba(0, 217, 255, 0.3); /* Cyan border */
+  --border-secondary: rgba(0, 217, 255, 0.2); /* Cyan border light */
+  --glass-bg: rgba(10, 14, 20, 0.6); /* Dark glass */
+  --glass-border: rgba(0, 217, 255, 0.2); /* Cyan glass border */
 }
 
 @theme inline {
