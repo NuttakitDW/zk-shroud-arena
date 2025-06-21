@@ -9,7 +9,7 @@ export const env = {
    * In production, we use the proxy path to avoid mixed content issues
    * In development, we can use direct localhost connection
    */
-  BACKEND_URL: process.env.NODE_ENV === 'production' ? '/api' : (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'),
+  BACKEND_URL: typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '/api' : (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'),
   
   /**
    * API endpoints
