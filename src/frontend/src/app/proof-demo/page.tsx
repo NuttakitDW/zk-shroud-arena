@@ -177,15 +177,7 @@ export default function ProofDemoAdvancedPage() {
                 </h4>
                 <div className="bg-black/50 rounded p-3 overflow-x-auto">
                   <pre className="text-xs font-mono text-green-400">
-{JSON.stringify({
-  proof: lastProof.proof,
-  public_inputs: lastProof.public_inputs,
-  metadata: lastProof.metadata || {
-    generated_at: new Date().toISOString(),
-    zone: currentZone?.name || 'Unknown',
-    h3_resolution: 13
-  }
-}, null, 2)}
+{JSON.stringify(lastProof, null, 2)}
                   </pre>
                 </div>
                 <button

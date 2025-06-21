@@ -23,13 +23,13 @@ export interface ProveRequest {
 
 // Proof verification request payload  
 export interface VerifyRequest {
-  proof: string;
+  proof: string | { a: string; b: string; c: string }; // Accepts both formats
   public_inputs: unknown[];
 }
 
 // ZK proof data structure
 export interface ZkProof {
-  proof: string;
+  proof: string | { a: string; b: string; c: string }; // Can be hex string or object with a,b,c fields
   public_inputs: unknown[];
   metadata?: {
     generated_at: string;
@@ -42,7 +42,7 @@ export interface ZkProof {
 // API response structures
 export interface ProveResponse {
   success: boolean;
-  proof: string;
+  proof: string | { a: string; b: string; c: string }; // Backend returns object with a,b,c
   public_inputs: unknown[];
   message?: string;
   error?: string;

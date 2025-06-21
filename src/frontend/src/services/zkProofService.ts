@@ -115,7 +115,7 @@ export class ZkProofService {
 
       // Create structured proof object
       const proof: ZkProof = {
-        proof: response.proof,
+        proof: response.proof, // This is now an object with {a, b, c}
         public_inputs: response.public_inputs,
         metadata: {
           generated_at: new Date().toISOString(),
@@ -238,8 +238,8 @@ export class ZkProofService {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       return {

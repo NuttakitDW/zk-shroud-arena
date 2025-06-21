@@ -185,18 +185,18 @@ export const LiveProofLogger: React.FC<LiveProofLoggerProps> = ({
       if (result.success && result.data) {
         setLastProof(result.data);
         
-        // Log the formatted proof
+        // Log the real proof response
+        console.log('✅ Proof Generated Successfully!');
+        console.log('Full API Response:', JSON.stringify(result.data, null, 2));
+        
+        // Also log in the format user requested if needed
         const formattedProof = {
+          ok: true,
           proof: result.data.proof,
-          public_inputs: result.data.public_inputs,
-          metadata: result.data.metadata || {
-            generated_at: new Date().toISOString(),
-            zone: currentZone.name,
-            h3_resolution: h3.getResolution(currentZone.h3Index)
-          }
+          public_inputs: result.data.public_inputs
         };
         
-        console.log('✅ Proof Generated Successfully!');
+        console.log('\nFormatted Proof:');
         console.log(JSON.stringify(formattedProof, null, 2));
         
         // Notify parent component
@@ -214,7 +214,7 @@ export const LiveProofLogger: React.FC<LiveProofLoggerProps> = ({
 
         addEvent({
           type: 'info',
-          message: `🔐 Proof hash: ${result.data.proof.substring(0, 32)}...`,
+          message: `🔐 Proof generated with ${result.data.public_inputs?.length || 0} public inputs`,
           data: { proof: result.data.proof }
         });
 
