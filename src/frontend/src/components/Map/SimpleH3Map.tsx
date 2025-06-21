@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { MapContainer, TileLayer, useMapEvents, Marker, Circle, useMap } from 'react-leaflet';
 import * as h3 from 'h3-js';
-import L from 'leaflet';
+import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { SimpleH3Controls } from './SimpleH3Controls';
 import { H3Zone } from './types';

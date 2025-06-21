@@ -48,7 +48,6 @@ export default function ZKShroudArena() {
     status: 'active',
     isCurrentPlayer: true,
   });
-  const [showRoleSelection, setShowRoleSelection] = useState(false);
 
   // Check backend connection
   useEffect(() => {
@@ -126,7 +125,7 @@ export default function ZKShroudArena() {
 
         {/* Game Content */}
         <main className="max-w-7xl mx-auto p-4">
-          {gamePhase === GamePhase.LOBBY && !showRoleSelection && (
+          {gamePhase === GamePhase.LOBBY && (
             <div className="text-center py-20">
               <h2 className="text-4xl font-bold mb-6">ZK Zone Control Demo</h2>
               <p className="text-xl text-gray-400 mb-8">Choose your role to begin</p>
@@ -210,94 +209,9 @@ export default function ZKShroudArena() {
                   <li>🎯 Strategic gameplay with unpredictable challenges</li>
                 </ul>
               </div>
-              
-              <div className="mt-8">
-                <p className="text-gray-400 mb-4">Or continue to the original game:</p>
-                <button
-                  onClick={() => setShowRoleSelection(true)}
-                  className="bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-                >
-                  Play Classic Battle Royale
-                </button>
-              </div>
             </div>
           )}
 
-          {gamePhase === GamePhase.LOBBY && showRoleSelection && (
-            <div className="text-center py-20">
-              <h2 className="text-4xl font-bold mb-6">Ready to Enter the Arena?</h2>
-              
-              {/* Arena Mode Selection */}
-              <div className="bg-gray-800 rounded-lg p-6 max-w-4xl mx-auto mb-8">
-                <h3 className="text-xl font-semibold mb-6">Choose Your Arena</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {/* Virtual Arena */}
-                  <button
-                    onClick={() => setArenaMode('virtual')}
-                    className={`p-6 rounded-lg border-2 transition-all ${
-                      arenaMode === 'virtual'
-                        ? 'border-cyan-500 bg-cyan-500/10'
-                        : 'border-gray-600 hover:border-gray-500'
-                    }`}
-                  >
-                    <div className="flex items-center justify-center mb-4">
-                      <Map className={`w-12 h-12 ${
-                        arenaMode === 'virtual' ? 'text-cyan-400' : 'text-gray-400'
-                      }`} />
-                    </div>
-                    <h4 className="text-lg font-semibold mb-2">Virtual Arena</h4>
-                    <p className="text-sm text-gray-400 mb-4">
-                      Practice in a simulated 2D battlefield with virtual coordinates and AI opponents.
-                    </p>
-                    <div className="text-xs text-left space-y-1 text-gray-500">
-                      <div>• No location permissions required</div>
-                      <div>• Instant gameplay</div>
-                      <div>• Perfect for testing and practice</div>
-                    </div>
-                  </button>
-
-                  {/* Real World Arena */}
-                  <button
-                    onClick={() => setArenaMode('real-world')}
-                    className={`p-6 rounded-lg border-2 transition-all ${
-                      arenaMode === 'real-world'
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-gray-600 hover:border-gray-500'
-                    }`}
-                  >
-                    <div className="flex items-center justify-center mb-4">
-                      <Globe className={`w-12 h-12 ${
-                        arenaMode === 'real-world' ? 'text-purple-400' : 'text-gray-400'
-                      }`} />
-                    </div>
-                    <h4 className="text-lg font-semibold mb-2">Real World Arena</h4>
-                    <p className="text-sm text-gray-400 mb-4">
-                      Play in the real world using your actual GPS location with advanced privacy protection.
-                    </p>
-                    <div className="text-xs text-left space-y-1 text-gray-500">
-                      <div>• Uses your real GPS location</div>
-                      <div>• Zero-knowledge location proofs</div>
-                      <div>• Ultimate privacy protection</div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-              
-              <button
-                onClick={handleStartGame}
-                className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-bold py-4 px-8 rounded-lg text-xl transition-all duration-200 transform hover:scale-105 mr-4"
-              >
-                Start {arenaMode === 'virtual' ? 'Virtual' : 'Real World'} Game
-              </button>
-              <button
-                onClick={() => setShowRoleSelection(false)}
-                className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-8 rounded-lg text-xl transition-all duration-200"
-              >
-                Back
-              </button>
-            </div>
-          )}
 
           {gamePhase === GamePhase.PREPARATION && (
             <div className="text-center py-20">
