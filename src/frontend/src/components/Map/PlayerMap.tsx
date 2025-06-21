@@ -6,25 +6,104 @@ import * as h3 from 'h3-js';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { H3Zone } from './types';
+import { MiningAnimation } from './MiningAnimation';
 
 // Create a custom icon for player location
-const createPlayerIcon = () => {
+const createPlayerIcon = (isInSafeZone: boolean = false, pointsPerTick: number = 10) => {
   if (typeof window === 'undefined') return null;
+  
+  const miningAnimation = isInSafeZone ? `
+    <div style="
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+    ">
+      <!-- Pulsing ring -->
+      <div style="
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        background-color: #22c55e;
+        border-radius: 50%;
+        opacity: 0.3;
+        animation: pulse 2s infinite;
+        top: -8px;
+        left: -8px;
+      "></div>
+      
+      <!-- Mining icon -->
+      <div style="
+        position: relative;
+        width: 24px;
+        height: 24px;
+        background-color: #22c55e;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.6);
+      ">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      
+      <!-- Mining text -->
+      <div style="
+        position: absolute;
+        top: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: #22c55e;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: bold;
+      ">Mining +${pointsPerTick}</div>
+    </div>
+    
+    <style>
+      @keyframes pulse {
+        0% {
+          transform: scale(0.8);
+          opacity: 0.5;
+        }
+        50% {
+          transform: scale(1.2);
+          opacity: 0.2;
+        }
+        100% {
+          transform: scale(0.8);
+          opacity: 0.5;
+        }
+      }
+    </style>
+  ` : '';
   
   return L.divIcon({
     className: 'player-location-marker',
     html: `
-      <div style="
-        width: 24px;
-        height: 24px;
-        background-color: #3b82f6;
-        border: 3px solid white;
-        border-radius: 50%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      "></div>
+      <div style="position: relative;">
+        ${miningAnimation}
+        <div style="
+          width: 24px;
+          height: 24px;
+          background-color: ${isInSafeZone ? '#22c55e' : '#3b82f6'};
+          border: 3px solid white;
+          border-radius: 50%;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          position: relative;
+        "></div>
+      </div>
     `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    iconSize: isInSafeZone ? [80, 80] : [24, 24],
+    iconAnchor: isInSafeZone ? [40, 60] : [12, 12],
   });
 };
 
@@ -41,9 +120,12 @@ interface PlayerMapProps {
 const LocationTracker: React.FC<{ 
   onLocationUpdate?: (lat: number, lng: number) => void;
   locationEnabled?: boolean;
-}> = ({ onLocationUpdate, locationEnabled }) => {
+  zones?: H3Zone[];
+}> = ({ onLocationUpdate, locationEnabled, zones = [] }) => {
   const map = useMap();
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [isInSafeZone, setIsInSafeZone] = useState(false);
+  const [currentZonePoints, setCurrentZonePoints] = useState(10);
 
   useEffect(() => {
     if (!locationEnabled || !navigator.geolocation) return;
@@ -56,11 +138,42 @@ const LocationTracker: React.FC<{
         
         // Center map on first location update
         if (!userLocation) {
-          map.setView(newLocation, 16);
+          map.setView(newLocation, 19);
+        }
+        
+        // Check if player is in a safe zone
+        const safeZone = zones.find(zone => {
+          if (zone.type !== 'safe') return false;
+          
+          // Check if player's position is within the H3 cell
+          const zoneH3Index = zone.h3Index;
+          const playerH3Index = h3.latLngToCell(position.coords.latitude, position.coords.longitude, h3.getResolution(zoneH3Index));
+          
+          return playerH3Index === zoneH3Index;
+        });
+        
+        setIsInSafeZone(!!safeZone);
+        if (safeZone) {
+          setCurrentZonePoints(safeZone.pointValue || 10);
         }
       },
       (error) => {
-        console.error('Location error:', error);
+        // Handle geolocation errors properly
+        let errorMessage = 'Unknown location error';
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location permission denied';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information unavailable';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out';
+            break;
+          default:
+            errorMessage = error.message || 'Unknown location error';
+        }
+        console.warn('Location service:', errorMessage);
       },
       {
         enableHighAccuracy: true,
@@ -72,29 +185,36 @@ const LocationTracker: React.FC<{
     return () => {
       navigator.geolocation.clearWatch(watchId);
     };
-  }, [locationEnabled, map, onLocationUpdate, userLocation]);
+  }, [locationEnabled, map, onLocationUpdate, userLocation, zones]);
 
   if (!userLocation || !locationEnabled) return null;
 
-  const playerIcon = createPlayerIcon();
+  const playerIcon = createPlayerIcon(isInSafeZone, currentZonePoints);
 
   return (
     <>
-      {/* Player location marker */}
+      {/* Player location marker with mining animation */}
       {playerIcon && (
         <Marker position={userLocation} icon={playerIcon}>
-          <Popup>Your location</Popup>
+          <Popup>
+            Your location
+            {isInSafeZone && (
+              <div className="mt-2 text-green-500 font-semibold">
+                Mining: +{currentZonePoints} points/tick
+              </div>
+            )}
+          </Popup>
         </Marker>
       )}
       
       {/* Accuracy circle */}
       <Circle
         center={userLocation}
-        radius={20}
+        radius={5}
         pathOptions={{
-          fillColor: '#3b82f6',
+          fillColor: isInSafeZone ? '#22c55e' : '#3b82f6',
           fillOpacity: 0.2,
-          color: '#3b82f6',
+          color: isInSafeZone ? '#22c55e' : '#3b82f6',
           weight: 2
         }}
       />
@@ -139,7 +259,7 @@ const PlayerMap: React.FC<PlayerMapProps> = ({
   existingZones = [],
   height = '100%',
   defaultCenter = [13.7563, 100.5018], // Bangkok
-  defaultZoom = 15,
+  defaultZoom = 19,
   onLocationUpdate,
   locationEnabled = false
 }) => {
@@ -161,6 +281,7 @@ const PlayerMap: React.FC<PlayerMapProps> = ({
         <LocationTracker 
           onLocationUpdate={onLocationUpdate}
           locationEnabled={locationEnabled}
+          zones={existingZones}
         />
       </MapContainer>
       

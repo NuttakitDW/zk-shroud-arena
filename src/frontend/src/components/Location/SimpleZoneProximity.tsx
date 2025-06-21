@@ -36,11 +36,13 @@ const SimpleZoneProximity: React.FC<SimpleZoneProximityProps> = ({
           const distance = getDistance(
             position.coords.latitude,
             position.coords.longitude,
-            zone.center.lat,
-            zone.center.lng
+            zone.center.latitude,
+            zone.center.longitude
           );
-          // Assuming zone radius of ~100m for demo
-          return distance < 100;
+          // Using radius for default "Building" size (~25m across, so ~12.5m radius)
+          // In production, this should be calculated based on zone.resolution
+          // For resolution 13 (Precise ~10m), radius would be ~5m
+          return distance < 15;
         });
 
         if (nearestZone && !currentZone) {
@@ -55,7 +57,22 @@ const SimpleZoneProximity: React.FC<SimpleZoneProximityProps> = ({
         }
       },
       (error) => {
-        setLocationError(error.message);
+        // Handle geolocation errors with user-friendly messages
+        let errorMessage = 'Unknown location error';
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Please enable location permissions to use this feature';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information is currently unavailable';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out. Please try again';
+            break;
+          default:
+            errorMessage = error.message || 'Unable to access location';
+        }
+        setLocationError(errorMessage);
       },
       {
         enableHighAccuracy: true,
@@ -111,7 +128,9 @@ const SimpleZoneProximity: React.FC<SimpleZoneProximityProps> = ({
           <div className="text-sm">
             <span className="text-gray-400">Current Status: </span>
             {currentZone ? (
-              <span className="text-green-400 font-semibold">Inside {currentZone.name}</span>
+              <span className={`font-semibold ${currentZone.type === 'safe' ? 'text-green-400' : 'text-red-400'}`}>
+                Inside {currentZone.name} {currentZone.type === 'safe' && `(+${currentZone.pointValue} coins/sec)`}
+              </span>
             ) : (
               <span className="text-yellow-400">Outside all zones</span>
             )}

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Shield, MapPin, Coins, Heart, AlertTriangle } from 'lucide-react';
+import { Shield, MapPin, Coins, Heart, AlertTriangle, Sparkles } from 'lucide-react';
 import { H3Zone } from '../../components/Map/types';
 // import { GamePhase } from '../../types/gameState'; // Not needed with SimpleH3Map
 
@@ -75,13 +75,13 @@ export default function PlayerPage() {
 
   // Simulate coin earning in safe zones
   useEffect(() => {
-    if (isInSafeZone) {
+    if (isInSafeZone && nearestZone) {
       const coinInterval = setInterval(() => {
-        setPlayerCoins(prev => prev + 1);
+        setPlayerCoins(prev => prev + (nearestZone.pointValue || 1));
       }, 1000);
       return () => clearInterval(coinInterval);
     }
-  }, [isInSafeZone]);
+  }, [isInSafeZone, nearestZone]);
 
   const handleLocationUpdate = () => {
     if (!navigator.geolocation) {
@@ -149,8 +149,16 @@ export default function PlayerPage() {
           <h2 className="text-lg font-semibold mb-4">Zone Information</h2>
           
           {/* Current Status */}
-          <div className="bg-gray-900 rounded-lg p-4 mb-4">
-            <h3 className="font-semibold mb-2">Your Status</h3>
+          <div className={`bg-gray-900 rounded-lg p-4 mb-4 ${isInSafeZone ? 'ring-2 ring-green-500/50 animate-pulse' : ''}`}>
+            <h3 className="font-semibold mb-2 flex items-center gap-2">
+              Your Status
+              {isInSafeZone && (
+                <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  Mining Active
+                </span>
+              )}
+            </h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-400">Current Zone:</span>
@@ -160,8 +168,11 @@ export default function PlayerPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Earning Rate:</span>
-                <span className="text-yellow-400">
-                  {isInSafeZone ? '+1 coin/sec' : '0 coins/sec'}
+                <span className={`flex items-center gap-1 ${isInSafeZone ? "text-yellow-400" : "text-gray-400"}`}>
+                  {isInSafeZone && (
+                    <Coins className="w-3 h-3 animate-pulse" />
+                  )}
+                  {isInSafeZone && nearestZone ? `+${nearestZone.pointValue} coins/sec` : '0 coins/sec'}
                 </span>
               </div>
               {!locationEnabled && (
