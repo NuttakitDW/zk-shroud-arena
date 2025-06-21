@@ -48,7 +48,7 @@ const H3ClickHandler: React.FC<{
             h3Index: cell,
             name: `Zone ${zones.length + 1}`,
             type: 'safe' as const,
-            center: { lat: centerLat, lng: centerLng },
+            center: { latitude: centerLat, longitude: centerLng },
             pointValue: 1,
             createdAt: Date.now(),
             updatedAt: Date.now()
@@ -99,10 +99,10 @@ const SimpleH3Map: React.FC<SimpleH3MapProps> = ({
   existingZones = [],
   height = '100%',
   defaultCenter = [13.7563, 100.5018], // Bangkok
-  defaultZoom = 15
+  defaultZoom = 19
 }) => {
   const [zones, setZones] = useState<H3Zone[]>(existingZones);
-  const [resolution, setResolution] = useState(8); // Default to "Area" size
+  const [resolution, setResolution] = useState(11); // Default to "Building" size (~25m)
   const [addNeighbors, setAddNeighbors] = useState(false);
 
   // Update zones when existingZones change
