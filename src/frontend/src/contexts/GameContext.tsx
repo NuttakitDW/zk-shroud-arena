@@ -16,6 +16,7 @@ import {
   GameUpdate
 } from '../types/gameState';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { phaseManager } from '../services/phaseManager';
 import {
   PlayerMoveMessage,
   PlayerHealthUpdateMessage,
@@ -170,6 +171,9 @@ const gameStateReducer = (state: GameState, action: GameAction): GameState => {
       };
       
       const phaseDuration = phaseDurations[action.payload as GamePhase] || 60000;
+      
+      // Sync with phase manager
+      phaseManager.setPhase(action.payload as GamePhase, 'server');
       
       return {
         ...state,
@@ -568,6 +572,12 @@ export const GameContextProvider: React.FC<GameContextProviderProps> = ({
     },
     
     updateProofStatus: (status: ZKProofStatus, proof?: ZKProofData) => {
+      // Check if proof updates are allowed in current phase
+      if (!phaseManager.isActionAllowed('canGenerateProofs') && status === ZKProofStatus.GENERATING) {
+        console.warn('[GameContext] Proof generation blocked in current phase:', phaseManager.getCurrentPhase());
+        return;
+      }
+      
       dispatch({
         type: GameActionType.UPDATE_PROOF_STATUS,
         payload: { status, proof },
@@ -662,7 +672,10 @@ export const GameContextProvider: React.FC<GameContextProviderProps> = ({
         console.warn('Failed to load game state from localStorage:', error);
       }
     }
-  }, [enablePersistence, loadStateSnapshot]);
+    
+    // Initialize phase manager with current game phase
+    phaseManager.setPhase(state.gamePhase.phase, 'auto', 'Initial sync with game state');
+  }, [enablePersistence, loadStateSnapshot, state.gamePhase.phase]);
 
   // Timer updates
   useEffect(() => {

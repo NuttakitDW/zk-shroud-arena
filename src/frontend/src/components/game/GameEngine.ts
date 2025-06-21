@@ -12,7 +12,7 @@ import {
   ZKProofData
 } from '../../types/gameState';
 import { LocationCoordinates } from '../../types/zkProof';
-import { generateLocationProof } from '../../services/zkProofService';
+import { generateLocationProofControlled } from '../../services/apiController';
 import { getWebSocketService } from '../../services/websocketService';
 
 export interface GameEngineConfig {
@@ -324,7 +324,7 @@ export class GameEngine {
           longitude: gamePosition.x / 100
         };
         
-        const proofResult = await generateLocationProof(
+        const proofResult = await generateLocationProofControlled(
           proofLocation,
           this.config.zkSettings.h3Resolution,
           h3Map

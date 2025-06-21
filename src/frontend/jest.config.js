@@ -31,6 +31,9 @@ const customJestConfig = {
     '^@/hooks/(.*)$': '<rootDir>/src/hooks/$1',
     '^@/types/(.*)$': '<rootDir>/src/types/$1',
     '^@/utils/(.*)$': '<rootDir>/src/utils/$1',
+    // Mock API controller to prevent backend calls in tests (except in its own test)
+    // Temporarily disabled for apiController testing
+    // '^(?!.*apiController\\.test\\.(ts|tsx)$).*/apiController$': '<rootDir>/src/__mocks__/apiController.ts',
   },
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',

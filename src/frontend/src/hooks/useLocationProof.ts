@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { zkProofService } from '../services/zkProofService';
+import { generateLocationProofControlled, verifyLocationProofControlled } from '../services/apiController';
 import {
   ZkProof,
   LocationCoordinates,
@@ -187,7 +187,7 @@ export const useLocationProof = (
         };
       }
       
-      const result = await zkProofService.generateProof(
+      const result = await generateLocationProofControlled(
         location,
         config.h3Resolution,
         mapToUse,
@@ -285,7 +285,7 @@ export const useLocationProof = (
     setState(prev => ({ ...prev, isVerifying: true, error: null }));
 
     try {
-      const result = await zkProofService.verifyProof(
+      const result = await verifyLocationProofControlled(
         proof.proof,
         proof.public_inputs
       );

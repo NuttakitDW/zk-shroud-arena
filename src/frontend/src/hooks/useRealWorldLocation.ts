@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { locationService, LocationUpdate, LocationError } from '../services/locationService';
-import { zkProofService } from '../services/zkProofService';
+import { generateLocationProofControlled, verifyLocationProofControlled } from '../services/apiController';
 import { LocationCoordinates, ZkProof, H3Index } from '../types/zkProof';
 import { GamePhase } from '../types/gameState';
 
@@ -135,7 +135,7 @@ export const useRealWorldLocation = (
       const h3Map: H3Index[] = []; // TODO: Implement H3 index generation
       
       // Use the actual ZK proof service
-      const proofResult = await zkProofService.generateProof(
+      const proofResult = await generateLocationProofControlled(
         targetLocation,
         resolution,
         h3Map,
@@ -190,7 +190,7 @@ export const useRealWorldLocation = (
         return false;
       }
       
-      const verifyResult = await zkProofService.verifyProof(
+      const verifyResult = await verifyLocationProofControlled(
         targetProof.proof,
         targetProof.public_inputs,
         { timeout: 10000 }
