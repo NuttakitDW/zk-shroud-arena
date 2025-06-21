@@ -4,6 +4,12 @@ export * from './Map';
 // Location components  
 export * from './Location';
 
+// UI components
+export * from './ui';
+
+// Admin components
+export * from './admin';
+
 // Game components
 export { GameOrchestrator } from './GameOrchestrator';
 export { LoadingScreen } from './LoadingScreen';

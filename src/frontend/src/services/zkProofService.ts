@@ -20,6 +20,7 @@ import {
   LocationCoordinates,
   H3Index
 } from '../types/zkProof';
+import { phaseManager } from './phaseManager';
 
 /**
  * Default configuration for ZK proof service
@@ -55,6 +56,18 @@ export class ZkProofService {
     options: ProofRequestOptions = {}
   ): Promise<ProveResult> {
     try {
+      // Check if proof generation is allowed in current phase
+      if (!phaseManager.isActionAllowed('canGenerateProofs')) {
+        const currentPhase = phaseManager.getCurrentPhase();
+        return {
+          success: false,
+          error: this.createError(
+            ZkProofErrorType.VALIDATION_ERROR,
+            `Proof generation not allowed in ${currentPhase} phase. Wait for the game to start.`,
+            false
+          )
+        };
+      }
       // Validate input coordinates
       const validatedCoords = this.validateCoordinates(coordinates);
       if (!validatedCoords.valid) {
@@ -135,6 +148,18 @@ export class ZkProofService {
     options: ProofRequestOptions = {}
   ): Promise<VerifyResult> {
     try {
+      // Check if proof verification is allowed in current phase
+      if (!phaseManager.isActionAllowed('canVerifyProofs')) {
+        const currentPhase = phaseManager.getCurrentPhase();
+        return {
+          success: false,
+          error: this.createError(
+            ZkProofErrorType.VALIDATION_ERROR,
+            `Proof verification not allowed in ${currentPhase} phase. Wait for the game to start.`,
+            false
+          )
+        };
+      }
       // Validate proof data
       if (!proof || !publicInputs) {
         return {
@@ -196,6 +221,11 @@ export class ZkProofService {
       options.timeout ?? this.config.timeout);
 
     try {
+      // Additional phase check before making API request
+      if (!phaseManager.canMakeAPIRequest('/prove')) {
+        throw new Error('API requests not allowed in current game phase');
+      }
+
       const response = await fetch(`${this.config.baseUrl}/prove`, {
         method: 'POST',
         headers: {
@@ -235,6 +265,11 @@ export class ZkProofService {
       options.timeout ?? this.config.timeout);
 
     try {
+      // Additional phase check before making API request
+      if (!phaseManager.canMakeAPIRequest('/verify')) {
+        throw new Error('API requests not allowed in current game phase');
+      }
+
       const response = await fetch(`${this.config.baseUrl}/verify`, {
         method: 'POST',
         headers: {
