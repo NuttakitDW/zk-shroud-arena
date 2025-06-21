@@ -1,3 +1,7 @@
+// cargo run --release --bin vk_to_snarkjs -- \
+//           --vk  ../verifying_key.bin \
+//           --out ../vkey.json
+
 use std::{fs, io::Cursor, path::PathBuf};
 
 use ark_bn254::{Bn254, Fq, Fq2, Fq12};
@@ -23,9 +27,11 @@ fn fq_to_str(f: &Fq) -> String {
     use ark_ff::PrimeField;
     f.into_bigint().to_string()
 }
+
 fn fq2_to_arr(f: &Fq2) -> [String; 2] {
-    [fq_to_str(&f.c0), fq_to_str(&f.c1)]
+    [fq_to_str(&f.c1), fq_to_str(&f.c0)] // imag first, real second
 }
+
 fn g1_to_arr(p: &<Bn254 as Pairing>::G1Affine) -> [String; 2] {
     [fq_to_str(&p.x), fq_to_str(&p.y)]
 }
@@ -51,9 +57,9 @@ struct VKeyJs {
     vk_gamma_2: [[String; 2]; 2],
     vk_delta_2: [[String; 2]; 2],
 
-    /// first 3 coeffs of α·β pairing in Fq12
     vk_alphabeta_12: [[[String; 2]; 2]; 3],
 
+    #[serde(rename = "IC")]
     ic: Vec<[String; 2]>,
 }
 
