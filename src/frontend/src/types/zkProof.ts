@@ -123,4 +123,5 @@ export type ProofRequestOptions = {
   useCache?: boolean;
   retryAttempts?: number;
   force?: boolean; // Force proof generation bypassing rate limits
+  bypassPhaseCheck?: boolean; // Bypass game phase restrictions (for demos)
 };
