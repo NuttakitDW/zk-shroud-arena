@@ -3,7 +3,7 @@
 # ZK Shroud Arena
 
 **ZK Shroud Arena** is a zero-knowledge, location-privacy **battle royale** game.  
-Players must stay within a dynamically defined safe zone—composed of any combination of **H3 hex-cells**—to earn rewards. The zone can change at any time, but **player locations remain completely private**.
+Players must stay within a dynamically defined safe zone—composed of any combination of **H3 cells**—to earn rewards. The zone can change at any time, but **player locations remain completely private**.
 
 This is made possible by our Rust + Arkworks-based **`PointInMapCircuit`**, which proves that a player is inside the allowed area without revealing their actual coordinates. The circuit supports **high-fidelity custom maps** and generates **proofs in under 1 second**, making it possible to be applied with real-time applications or even IoT-constrained environments.
 
@@ -36,19 +36,23 @@ This project consists of the following components
 
 ## Showcase
 
-// TODO images here
+![0](images/0.jpeg)
+
+![1](images/1.png)
+
+![2](images/2.png)
+
+![3](images/3.png)
+
+![4](images/4.png)
 
 - Players must remain within dynamic zones to earn rewards, or lose health outside.
 
-- Zones are shaped using H3 hexagonal cells, supporting safe zones of any shape—not just circles or squares.
+- Zones are shaped using H3 hexagonal cells, supporting safe zones of any convex shape, not just circles or squares.
 
 - Player coordinates are never revealed—only ZK proofs are submitted every second.
 
 - The game manager can update zones mid-game without ever seeing player positions.
-
-## Video and Presentation Slide
-
-// TODO
 
 ## What This Solves
 
@@ -200,4 +204,4 @@ cargo run --release
 
 ## Acknowledgement
 
-The idea of using H3 cells to represent complex areas came from the paper [_Zero-Knowledge Location Privacy via Accurate Floating-Point SNARKs_](<[https://eprint.iacr.org/2024/1842.pdf](https://eprint.iacr.org/2024/1842.pdf)>) and its [reference implementation](https://github.com/tumberger/zk-Location/tree/main). We were not familiar with the H3 grid system until we discovered this work. Our implementation, however, is entirely different from theirs, which is written in Rust rather than Go, avoids floating-point arithmetic because of its complexity, and does not derive an H3 cell from latitude and longitude with the “trigonometry black magic” used in the paper. Instead, we verify location by checking whether a point lies inside a convex polygon using only subtractions and multiplications.
+The idea of using H3 cells to represent complex areas came from the paper [Zero-Knowledge Location Privacy via Accurate Floating-Point SNARKs](https://eprint.iacr.org/2024/1842.pdf) and its [reference implementation](https://github.com/tumberger/zk-Location/tree/main). We were not familiar with the H3 grid system until we discovered this work. Our implementation, however, is entirely different from theirs, which is written in Rust rather than Go, avoids floating-point arithmetic because of its complexity, and does not derive an H3 cell from latitude and longitude with the “trigonometry black magic” used in the paper. Instead, we verify location by checking whether a point lies inside a convex polygon using only subtractions and multiplications.
