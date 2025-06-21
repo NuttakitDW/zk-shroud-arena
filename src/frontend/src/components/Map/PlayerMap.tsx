@@ -147,9 +147,30 @@ const LocationTracker: React.FC<{
           
           // Check if player's position is within the H3 cell
           const zoneH3Index = zone.h3Index;
-          const playerH3Index = h3.latLngToCell(position.coords.latitude, position.coords.longitude, h3.getResolution(zoneH3Index));
+          const zoneResolution = h3.getResolution(zoneH3Index);
           
-          return playerH3Index === zoneH3Index;
+          // Get the player's H3 cell at the same resolution as the zone
+          const playerH3Index = h3.latLngToCell(position.coords.latitude, position.coords.longitude, zoneResolution);
+          
+          // Direct match check
+          if (playerH3Index === zoneH3Index) {
+            return true;
+          }
+          
+          // For coarser resolutions (Area, Neighborhood), check if player is within the zone's cell
+          // by checking if the player's finer resolution cell is a child of the zone's cell
+          if (zoneResolution <= 10) { // Resolution 10 and below are coarser (Area, Neighborhood)
+            // Check if player's position at a finer resolution is within the zone's cell
+            const finerResolution = Math.min(zoneResolution + 2, 15); // Use a finer resolution
+            const playerFinerH3Index = h3.latLngToCell(position.coords.latitude, position.coords.longitude, finerResolution);
+            
+            // Get the parent of the player's finer cell at the zone's resolution
+            const playerParentAtZoneRes = h3.cellToParent(playerFinerH3Index, zoneResolution);
+            
+            return playerParentAtZoneRes === zoneH3Index;
+          }
+          
+          return false;
         });
         
         setIsInSafeZone(!!safeZone);
