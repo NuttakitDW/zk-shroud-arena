@@ -146,11 +146,9 @@ export default function PhaseDemoPage() {
               currentLocation={{
                 zoneName: 'Demo Zone',
                 zoneId: 'demo-zone',
-                direction: 'N',
-                approximateDistance: '100m',
-                lastUpdated: Date.now(),
-                privacyLevel: 'high',
-                h3Index: '85283473fffffff'
+                direction: 'north',
+                approximateDistance: 'close',
+                lastUpdated: Date.now()
               }}
               realLocation={demoLocation}
               showDetails={true}

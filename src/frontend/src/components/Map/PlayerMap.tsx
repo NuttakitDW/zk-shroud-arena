@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Popup, useMap } from 'react-leaflet';
 import * as h3 from 'h3-js';
-import L from 'leaflet';
+import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { H3Zone } from './types';
 import { MiningAnimation } from './MiningAnimation';

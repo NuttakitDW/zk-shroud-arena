@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useCallback } from 'react';
 import { useMap, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
+import * as L from 'leaflet';
 import * as h3 from 'h3-js';
 import { H3Zone, ZoneDrawingState, Coordinates } from './types';
 
