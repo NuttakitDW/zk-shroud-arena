@@ -2,10 +2,11 @@
 //! authorised H3 cell.
 
 use actix_web::{HttpResponse, Responder, error::ErrorBadRequest, post, web};
-
 use ark_bn254::{Bn254, Fr};
 use ark_crypto_primitives::{snark::SNARK, sponge::poseidon::PoseidonConfig};
 use ark_groth16::Groth16;
+use ark_relations::r1cs::ConstraintSynthesizer;
+use ark_relations::r1cs::ConstraintSystem; // --- debug
 use ark_serialize::CanonicalSerialize;
 use ark_std::{
     One, Zero,
@@ -138,6 +139,25 @@ pub async fn prove(
         pub_hash_arr[i] = *h;
     }
 
+    // we need `poly` and `pub_hash_arr` twice, so keep copies
+    let poly_copy = poly; // Copy types, cheap
+    let pub_hash_copy = pub_hash_arr;
+
+    // --- debug: count constraints ---------------------------------
+    let cs_dbg = ConstraintSystem::<F>::new_ref();
+    PointInMapCircuit::<F, PREC, MAX_VERTS, MAX_HASHES>::new(
+        Point2DDec::from_f64(x, y),
+        poly_copy,
+        n as u64,
+        final_flag,
+        pub_hash_copy,
+        cfg.clone(),
+    )
+    .generate_constraints(cs_dbg.clone())
+    .unwrap();
+    let num_constraints = cs_dbg.num_constraints(); // --- debug
+
+    // main proving circuit (moves original arrays)
     let circuit = PointInMapCircuit::<F, PREC, MAX_VERTS, MAX_HASHES>::new(
         Point2DDec::from_f64(x, y),
         poly,
@@ -162,7 +182,7 @@ pub async fn prove(
     /* 6. public inputs ------------------------------------------- */
     let mut public_inputs = Vec::<F>::new();
     public_inputs.push(if final_flag { F::one() } else { F::zero() });
-    public_inputs.extend_from_slice(&pub_hash_arr);
+    public_inputs.extend_from_slice(&pub_hash_copy);
 
     /* 7. serialise (uncompressed) → base-64 ----------------------- */
     let proof_json = serde_json::json!({
@@ -180,6 +200,7 @@ pub async fn prove(
         // "inside_polygon": inside_poly,
         // "hash_found_in_map": hash_match,
         // "in_map_final": final_flag,
+        "num_constraints": num_constraints,            // --- debug
 
         "proof": proof_json,
         "public_inputs": publics_b64
