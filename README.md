@@ -50,6 +50,12 @@ This project consists of the following components
 
 // TODO
 
+## What This Solves
+
+As of now, the authors are not aware of any proof-of-location project that accepts a list of multiple convex polygons as public input; existing projects handle only a single, trivial shape such as a circle, square, or (at most) a heptagon. Our circuit supports any convex polygon, with a configurable `CIRCUIT_MAX_VERTICES` (currently 6). It also accepts a polygon list of up to 1,024 entries, which is sufficient for many complex maps representing regions or entire countries, and this limit can be raised via `CIRCUIT_MAX_POLYGON_HASHES` if more is needed. Increasing either parameter adds only minimal constraints. The circuit is written in Rust, providing compatibility with the ZK ecosystem, and is MIT-licensed, so it's free for anyone to use.
+
+![Berlin Map](images/berlin-h3-cells.png)
+
 ## Circuit Constraints
 
 The more H3 cells you include, the higher the fidelity your map achieves. The constraint count grows by 3 for each H3 cell, which means if you create a circuit that allows 8096 cells, the constraint count will only be around ~64k, about 50% larger than the current circuit used in this demo (1024 H3 cell count), and the proof time should still remain below 1 second (near real-time).
@@ -69,12 +75,6 @@ We have measured the performance of the circuit on two platforms: my MacBook M1 
 |                                             | Verify    |             **5 ms** |
 | **GCP c4-highcpu-8** <br>Berlin → Stockholm | Prove     | **440 ms** (+60 RTT) |
 |                                             | Verify    |  **90 ms** (+60 RTT) |
-
-## What This Solves
-
-As of now, the authors are not aware of any proof-of-location project that accepts a list of multiple convex polygons as public input; existing projects handle only a single, trivial shape such as a circle, square, or (at most) a heptagon. Our circuit supports any convex polygon, with a configurable `CIRCUIT_MAX_VERTICES` (currently 6). It also accepts a polygon list of up to 1,024 entries, which is sufficient for many complex maps representing regions or entire countries, and this limit can be raised via `CIRCUIT_MAX_POLYGON_HASHES` if more is needed. Increasing either parameter adds only minimal constraints. The circuit is written in Rust, providing compatibility with the ZK ecosystem, and is MIT-licensed, so it's free for anyone to use.
-
-![Berlin Map](images/berlin-h3-cells.png)
 
 ## Setup
 
