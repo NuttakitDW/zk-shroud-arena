@@ -1,94 +1,203 @@
-# ZK Shroud Arena
+<!-- ────────────────────────────────────────────────────────────── -->
 
-A zero-knowledge battle royale survival game where players compete in a shrinking arena while maintaining complete location privacy through cryptographic proofs.
+# ZK Shroud Arena
 
-## 🎮 Game Concept
+**ZK Shroud Arena** is a zero-knowledge, location-privacy **battle royale** game.  
+Players must stay within a dynamically defined safe zone—composed of any combination of **H3 hex-cells**—to earn rewards. The zone can change at any time, but **player locations remain completely private**.
 
-**ZK Shroud Arena** is a revolutionary battle royale game that solves the fundamental privacy problem in competitive gaming: proving you're playing fairly without revealing your strategic position.
+This is made possible by our Rust + Arkworks-based **`PointInMapCircuit`**, which proves that a player is inside the allowed area without revealing their actual coordinates. The circuit supports **high-fidelity custom maps** and generates **proofs in under 1 second**, making it possible to be applied with real-time applications or even IoT-constrained environments.
 
-### Core Mechanics
+## Overview
 
-- **Private Location Proofs**: Players generate zero-knowledge proofs that they remain within the safe zone without revealing their exact coordinates
-- **Shrinking Arena**: The playable area decreases over time, forcing strategic movement and encounters
-- **Fair Play Verification**: All players can verify others are following the rules without seeing their positions
-- **Encrypted Combat**: Battle mechanics use ZK proofs to validate hits and eliminations while preserving tactical positioning
+This project consists of the following components
 
-### Zero-Knowledge Innovation
+1. **Frontend Application**
 
-- **Range Proofs**: Prove your coordinates are within the allowed boundary without revealing them
-- **Movement Validation**: Confirm realistic movement patterns without exposing travel paths  
-- **Combat Verification**: Validate weapon range and line-of-sight without revealing positions
-- **Anti-Cheat System**: Detect impossible movements or teleportation through cryptographic constraints
+   - Built using TypeScript + Next.js.
+   - Real-time map rendering with H3 hex grid overlays.
+   - Dynamic zone updates and player positioning visualization.
+   - Seamless WebSocket integration for live state sync.
+   - Real-time HUD with health, coins, zone timer, and player count.
+   - Live ZK proof status display with backend connection indicators.
 
-### Technical Stack
+2. **Backend ZK Proof Service**
 
-- **Backend**: Rust-based game server with ZK proof verification
-- **Frontend**: Next.js real-time game client with WebSocket communication
-- **Cryptography**: Custom ZK circuits for location and combat proofs
-- **Consensus**: Decentralized verification of game state and outcomes
+   - Built using Rust + Actix-web.
+   - Hosts /prove, /verify, and /healthz endpoints.
 
-## 🚀 Getting Started
+3. **ZK Circuit**
 
-This project is built for ZK Hack 2025, showcasing practical applications of zero-knowledge proofs in gaming and privacy-preserving competition.
+   - Built using Rust + Arkworks zero-knowledge libraries.
+   - Uses Groth16 and the BN254 curve to optimize proof generation time.
+   - Configurable maximum number of H3 cells (currently 1024 cells).
+   - Works with any kind of convex polygon, but we chose the H3 grid system for better human readability and compatibility.
+   - ~42k constraints.
+   - ~300 ms proof time on M1 Pro 16GB.
 
-### Development Setup
+## Showcase
+
+// TODO images here
+
+- Players must remain within dynamic zones to earn rewards, or lose health outside.
+
+- Zones are shaped using H3 hexagonal cells, supporting safe zones of any shape—not just circles or squares.
+
+- Player coordinates are never revealed—only ZK proofs are submitted every second.
+
+- The game manager can update zones mid-game without ever seeing player positions.
+
+## Video and Presentation Slide
+
+// TODO
+
+## What This Solves
+
+As of now, the authors are not aware of any proof-of-location project that accepts a list of multiple convex polygons as public input; existing projects handle only a single, trivial shape such as a circle, square, or (at most) a heptagon. Our circuit supports any convex polygon, with a configurable `CIRCUIT_MAX_VERTICES` (currently 6). It also accepts a polygon list of up to 1,024 entries, which is sufficient for many complex maps representing regions or entire countries, and this limit can be raised via `CIRCUIT_MAX_POLYGON_HASHES` if more is needed. Increasing either parameter adds only minimal constraints. The circuit is written in Rust, providing compatibility with the ZK ecosystem, and is MIT-licensed, so it's free for anyone to use.
+
+![Berlin Map](images/berlin-h3-cells.png)
+
+## Circuit Constraints
+
+The more H3 cells you include, the higher the fidelity your map achieves. The constraint count grows by 3 for each H3 cell, which means if you create a circuit that allows 8096 cells, the constraint count will only be around ~64k, about 50% larger than the current circuit used in this demo (1024 H3 cell count), and the proof time should still remain below 1 second (near real-time).
+
+| H3 Cell Count | R1CS Constraints |
+| ------------- | ---------------- |
+| 1024          | 42052            |
+| 2048          | 45124            |
+
+## Circuit Performance
+
+We have measured the performance of the circuit on two platforms: my MacBook M1 Pro with 16 GB of RAM and a GCP instance in europe-north2 (Stockholm, Sweden, Europe) with 8 vCPUs and 16 GB of RAM. The performance appears to be better when tested on macOS and should be much better on newer hardware like M4 chips. If placed in a Raspberry Pi 5, it is expected that the proof generation time should still definitely be within 5 seconds, enabling zk proof generation with a small-footprint IoT device that can be installed anywhere.
+
+| HW / Location                               | Operation |                 Time |
+| ------------------------------------------- | --------- | -------------------: |
+| **M1 Pro 16 GB**                            | Prove     |           **300 ms** |
+|                                             | Verify    |             **5 ms** |
+| **GCP c4-highcpu-8** <br>Berlin → Stockholm | Prove     | **440 ms** (+60 RTT) |
+|                                             | Verify    |  **90 ms** (+60 RTT) |
+
+## Setup
+
+The frontend application will be available at http://localhost:3001
+
+The backend ZK proof service should be running at http://localhost:8080
+
+### Frontend Application
+
+#### Setup
 
 ```bash
-# Start frontend development server
 cd src/frontend
+
 npm install
+
 npm run dev
+```
 
-# The frontend will be available at http://localhost:3001
-# Backend ZK proof service should be running at http://localhost:8080
+##### Run tests
 
-# Run tests
+```bash
 npm run test
+```
 
-# Build for production
+##### Build for production
+
+```bash
 npm run build
 ```
 
-### Game Features (Implemented)
+### Backend ZK Proof Service
 
-#### 🎮 Core Battle Royale System
-- ✅ **Interactive Battle Royale Interface** - Complete game lobby, preparation, and active gameplay phases
-- ✅ **Arena Mode Selection** - Choose between Virtual Arena and Real World Arena
-- ✅ **Game State Management** - Complete React context-based state handling
-- ✅ **Backend Integration** - Connection to Rust ZK proof service at localhost:8080
+#### Setup (macOS)
 
-#### 🗺️ Dual Arena Modes
-- ✅ **Virtual Arena** - Practice mode with simulated 2D battlefield and AI opponents
-- ✅ **Real World Arena** - Play using actual GPS location with OpenStreetMap integration
-- ✅ **Interactive Maps** - Click-to-move in virtual mode, real-time location tracking in real-world mode
-- ✅ **Arena Zones** - Safe zones and shrinking mechanics visualization for both modes
+```bash
+brew install cmake pkgconf
 
-#### 🔐 Zero-Knowledge Privacy System
-- ✅ **Location Permission Management** - Smart location access requests with proper error handling
-- ✅ **Real-time Location Tracking** - GPS-based gameplay with configurable accuracy levels
-- ✅ **Privacy Controls** - Granular settings for location sharing, proof intervals, and movement thresholds
-- ✅ **ZK Proof Integration** - Location verification without revealing exact coordinates
-- ✅ **Anti-cheat Protection** - Movement validation, speed limits, and trust scoring
+cargo run --release
+```
 
-#### 🛡️ Advanced Privacy Features
-- ✅ **Anonymous Mode** - Hide player identity in ZK proofs
-- ✅ **Location Obfuscation** - Add random noise to coordinates for enhanced privacy
-- ✅ **Configurable Accuracy** - Choose between high (±5m), medium (±50m), and low (±200m) precision
-- ✅ **Manual/Automatic Proofs** - Control when ZK proofs are generated
+#### Setup (Ubuntu)
 
-#### 📱 User Experience
-- ✅ **Responsive Design** - Works on desktop and mobile devices
-- ✅ **Real-time UI Updates** - Live status indicators and game statistics
-- ✅ **Professional Gaming Interface** - Dark theme with cyan/purple accents
-- ✅ **Location Status Monitoring** - Visual feedback for GPS accuracy and connection status
+```bash
+apt install build-essential cmake pkg-config libsqlite3-dev sqlite3
 
-## 🔐 Privacy Features
+cargo run --release
+```
 
-- **Location Privacy**: Your exact position is never revealed to other players or the server
-- **Strategy Protection**: Movement patterns and tactical decisions remain confidential
-- **Fair Competition**: All players can verify rule compliance without information leakage
-- **Cheat Prevention**: Cryptographic proofs prevent common exploits like wallhacking and teleportation
+## Backend Usage
 
-## 🏆 Competitive Integrity
+### Prove
 
-ZK Shroud Arena demonstrates how zero-knowledge proofs can create truly fair competitive environments where privacy and verifiability coexist, opening new possibilities for esports and gaming tournaments.
+`POST /prove`
+
+**Request Body:**
+
+```json
+{
+  "lat": 40.68953953,
+  "lon": -74.04016093,
+  "resolution": 10,
+  "h3_map": ["8a2a1072b5affff", "8a2a1072b51ffff", "8a2a1072b50ffff"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "ok": true,
+  "proof": {
+    "a": "Ekm99nhbAInwbt9TF6IoJlQJp0Ta8Bj/FCxfUKe/Ohv7f+HgrpX38tapXrOjjyHxfHlVYSAhkdIWypPpOsz1ow==",
+    "b": "BlnzwCyUabZw2WI+LEz/d/yZs+IDeiEwI+e8rtbZiQSMxG1sumHK9ldImYv9mvZL1/o+IOV+F53MxPxkOiBkHAw2RcmUt6rydVusj5KMjdAxA4jml+e9DsjmAVeQj0Uns7zgHwgs71EDCORaeZTRc+LU5h9GUGA7Ku/YZJE3Bqk=",
+    "c": "CqpNJynMnZnbpCMwG70/RbJXxluulZFsJNlnT8ufQRk/KnQhcZbo7UXAx2F4ZHrwptIsS/gLqkPyHOekx56mnw=="
+  },
+  "public_inputs": [
+    "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "LqavhL5cVeGNPdHfbrPmgc6mPxEfXI9GR3ld5cf0tCM=",
+    "TnoFS0uSTxMJcQJ0yf8yf+h5t5ZYH7vxdm18/cC6gBg=",
+    "HsxVeSufR72lsaelqsPX6/D0h1jNWn1Wz93RwMGQ0Ac=",
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    ...
+  ]
+}
+```
+
+---
+
+### Verify
+
+`POST /verify`
+
+**Request Body:**
+
+```json
+{
+  "proof": {
+    "a": "Ekm99nhbAInwbt9TF6IoJlQJp0Ta8Bj/FCxfUKe/Ohv7f+HgrpX38tapXrOjjyHxfHlVYSAhkdIWypPpOsz1ow==",
+    "b": "BlnzwCyUabZw2WI+LEz/d/yZs+IDeiEwI+e8rtbZiQSMxG1sumHK9ldImYv9mvZL1/o+IOV+F53MxPxkOiBkHAw2RcmUt6rydVusj5KMjdAxA4jml+e9DsjmAVeQj0Uns7zgHwgs71EDCORaeZTRc+LU5h9GUGA7Ku/YZJE3Bqk=",
+    "c": "CqpNJynMnZnbpCMwG70/RbJXxluulZFsJNlnT8ufQRk/KnQhcZbo7UXAx2F4ZHrwptIsS/gLqkPyHOekx56mnw=="
+  },
+  "public_inputs": [
+    "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "LqavhL5cVeGNPdHfbrPmgc6mPxEfXI9GR3ld5cf0tCM=",
+    "TnoFS0uSTxMJcQJ0yf8yf+h5t5ZYH7vxdm18/cC6gBg=",
+    "HsxVeSufR72lsaelqsPX6/D0h1jNWn1Wz93RwMGQ0Ac=",
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    ...
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "ok": true // false if fails to verify
+}
+```
+
+## Acknowledgement
+
+The idea of using H3 cells to represent complex areas came from the paper [_Zero-Knowledge Location Privacy via Accurate Floating-Point SNARKs_](<[https://eprint.iacr.org/2024/1842.pdf](https://eprint.iacr.org/2024/1842.pdf)>) and its [reference implementation](https://github.com/tumberger/zk-Location/tree/main). We were not familiar with the H3 grid system until we discovered this work. Our implementation, however, is entirely different from theirs, which is written in Rust rather than Go, avoids floating-point arithmetic because of its complexity, and does not derive an H3 cell from latitude and longitude with the “trigonometry black magic” used in the paper. Instead, we verify location by checking whether a point lies inside a convex polygon using only subtractions and multiplications.
