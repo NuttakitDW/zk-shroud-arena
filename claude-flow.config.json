@@ -1,0 +1,104 @@
+{
+  "maxAgents": 2,
+  "defaultStrategy": "development",
+  "defaultMode": "hierarchical",
+  "enableParallel": true,
+  "enableMonitoring": true,
+  "projectConstraints": {
+    "backendPolicy": "DO_NOT_TOUCH",
+    "backendUrl": "http://localhost:8080",
+    "focusArea": "frontend_only",
+    "allowedDirectories": ["src/frontend", "public", "docs"],
+    "restrictedDirectories": ["src/backend", "Cargo.toml", "*.rs"],
+    "apiEndpoints": {
+      "/prove": "http://localhost:8080/prove",
+      "/verify": "http://localhost:8080/verify"
+    }
+  },
+  "agentTypes": {
+    "dev": {
+      "name": "Frontend Development Agent",
+      "description": "Handles FRONTEND ONLY coding, React/Next.js components, and client-side development. NEVER touches backend code or Rust files. Uses temp backend at localhost:8080",
+      "sparc_mode": "coder",
+      "max_instances": 1,
+      "priority": "high",
+      "constraints": {
+        "workingDirectory": "src/frontend",
+        "allowedFileTypes": [".tsx", ".ts", ".js", ".jsx", ".css", ".json", ".md"],
+        "restrictedFileTypes": [".rs", ".toml"],
+        "backendPolicy": "consume_only"
+      }
+    },
+    "docs": {
+      "name": "Frontend Documentation Agent", 
+      "description": "Creates frontend documentation, README files, and UI/UX documentation. Does NOT document backend APIs (they exist at localhost:8080)",
+      "sparc_mode": "documenter",
+      "max_instances": 1,
+      "priority": "medium",
+      "constraints": {
+        "focusArea": "frontend_documentation_only"
+      }
+    },
+    "design": {
+      "name": "UI/UX Design Agent",
+      "description": "Handles UI/UX design, React component design, and frontend architecture. Integrates with backend at localhost:8080 but never modifies it",
+      "sparc_mode": "designer",
+      "max_instances": 1,
+      "priority": "medium",
+      "constraints": {
+        "designScope": "frontend_ui_only"
+      }
+    },
+    "research": {
+      "name": "Frontend Research Agent",
+      "description": "Researches frontend technologies, React patterns, Next.js features, and client-side solutions. Does NOT research backend technologies", 
+      "sparc_mode": "researcher",
+      "max_instances": 1,
+      "priority": "medium",
+      "constraints": {
+        "researchScope": "frontend_technologies_only"
+      }
+    }
+  },
+  "orchestration": {
+    "coordinationMode": "centralized",
+    "taskDistribution": "round_robin",
+    "conflictResolution": "priority_based",
+    "memorySharing": true
+  },
+  "performance": {
+    "concurrentTasks": 2,
+    "timeoutMs": 180000,
+    "retryAttempts": 1,
+    "cachingEnabled": true,
+    "testOptimizations": {
+      "skipCoverageByDefault": true,
+      "useParallelWorkers": true,
+      "bailOnFirstFailure": false,
+      "preferFastTests": true
+    }
+  },
+  "ui": {
+    "enabled": true,
+    "port": 3000,
+    "host": "localhost"
+  },
+  "memory": {
+    "persistentStorage": true,
+    "maxEntries": 1000,
+    "cleanupInterval": "24h",
+    "maxMemoryPerAgent": "2GB",
+    "totalMaxMemory": "6GB",
+    "enableGarbageCollection": true,
+    "gcInterval": "5m",
+    "killAgentOnMemoryExceed": true,
+    "memoryWarningThreshold": "80%"
+  },
+  "resourceLimits": {
+    "maxConcurrentAgents": 2,
+    "staggeredStartDelay": 5000,
+    "enableMemoryMonitoring": true,
+    "autoKillHighMemoryProcesses": true,
+    "memoryCheckInterval": 30000
+  }
+}

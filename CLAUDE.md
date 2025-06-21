@@ -1,150 +1,78 @@
-# ZK Hack 2025 Project
+# Claude Code Configuration
 
-A monolith application with Rust backend and Next.js frontend for ZK Hack 2025.
+## Build Commands
+- `cd src/frontend && npm run dev`: Start frontend development server on port 3001
+- `cd src/frontend && npm run build`: Build the project
+- `make test-fast`: **PREFERRED** - Run fast frontend tests (no coverage, bail on failure)
+- `cd src/frontend && npm run test`: Run tests (fast, no coverage)
+- `cd src/frontend && npm run test:fast`: Run tests with bail on first failure
+- `cd src/frontend && npm run test:coverage`: Run tests with coverage (slower)
+- `cd src/frontend && npm run lint`: Run ESLint and format checks
+- `cd src/frontend && npm run typecheck`: Run TypeScript type checking
+- `./claude-flow --help`: Show all available commands
 
-## 🏗️ Project Structure
+## 🚨 CRITICAL PROJECT CONSTRAINTS 🚨
 
-```
-zkth-zkhack2025/
-├── src/
-│   ├── backend/                 # Rust backend
-│   │   ├── src/
-│   │   │   └── main.rs         # Entry point
-│   │   ├── api/                # API route handlers
-│   │   ├── controllers/        # Request controllers
-│   │   ├── models/             # Data models
-│   │   ├── middleware/         # Custom middleware
-│   │   ├── services/           # Business logic
-│   │   ├── utils/              # Backend utilities
-│   │   ├── config/             # Configuration files
-│   │   └── Cargo.toml          # Rust dependencies
-│   └── frontend/               # Next.js frontend
-│       ├── src/
-│       │   └── app/            # App Router (Next.js 15)
-│       ├── components/         # React components
-│       ├── pages/              # Page components
-│       ├── hooks/              # Custom React hooks
-│       ├── utils/              # Frontend utilities
-│       ├── styles/             # CSS/SCSS files
-│       ├── assets/             # Static assets
-│       └── package.json        # Node.js dependencies
-├── tests/
-│   ├── backend/                # Backend tests
-│   ├── frontend/               # Frontend tests
-│   └── e2e/                    # End-to-end tests
-├── docs/                       # Documentation
-├── scripts/                    # Build/deployment scripts
-├── Makefile                    # Development commands
-└── CLAUDE.md                   # This file
-```
+### FRONTEND-ONLY DEVELOPMENT POLICY
+**⚠️ STRICTLY ENFORCED RULES:**
 
-## 🚀 Development
+1. **DO NOT TOUCH BACKEND CODE**
+   - ❌ NEVER modify files in `src/backend/`
+   - ❌ NEVER edit `Cargo.toml` or any `.rs` files
+   - ❌ NEVER change backend configuration
+   - ❌ NEVER run cargo commands
 
-### Quick Start Commands
+2. **BACKEND IS RUNNING AT localhost:8080**
+   - ✅ Backend server is already running at `http://localhost:8080`
+   - ✅ API endpoints available:
+     - `POST http://localhost:8080/prove` - ZK proof generation
+     - `POST http://localhost:8080/verify` - ZK proof verification
+   - ✅ Use these endpoints in frontend code
 
-Use the Makefile for common development tasks:
+3. **FRONTEND-ONLY WORK AREAS**
+   - ✅ Work ONLY in `src/frontend/` directory
+   - ✅ Modify React/Next.js components (.tsx, .ts, .jsx, .js)
+   - ✅ Update styles (.css, .scss)
+   - ✅ Edit frontend configuration (package.json, next.config.ts, etc.)
+   - ✅ Create frontend documentation
+   - ✅ Frontend runs on port 3001 (to avoid conflicts with claude-flow on port 3000)
 
-```bash
-make dev        # Start both backend and frontend in development mode
-make tail-logs  # Tail application logs
-make build      # Build both backend and frontend
-make test       # Run all tests
-make clean      # Clean build artifacts
-```
+4. **API INTEGRATION PATTERN**
+   ```typescript
+   // ✅ CORRECT: Frontend API calls to backend
+   const response = await fetch('http://localhost:8080/prove', {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify(proofData)
+   });
+   ```
 
-### Backend (Rust)
-- **Framework**: To be determined (Axum/Actix-web/Warp)
-- **Database**: To be determined
-- **Port**: 8000 (default)
+5. **AGENT BEHAVIOR**
+   - All 4 agents (dev, docs, design, research) focus ONLY on frontend
+   - Backend is a black box - consume its APIs but never modify it
+   - Report any backend-related issues to user, don't try to fix them
 
-### Frontend (Next.js 15)
-- **Framework**: Next.js with App Router
-- **Styling**: Tailwind CSS
-- **TypeScript**: Enabled
-- **Bundler**: Turbopack (dev mode)
-- **Port**: 3000 (default)
+**These rules apply to ALL agents and ALL operations. No exceptions.**
 
-## 📋 Development Rules
+## Development Best Practices
 
-### Git Commit Convention
+### Change and Test Workflow
+- When making any change, ALWAYS follow these steps:
+  - Make the minimum required change
+  - **IMMEDIATELY run `make test-fast`** to verify no errors (fastest feedback)
+  - If any errors occur, fix the issue before proceeding
+  - Repeat testing until 0 errors are present
+  - Only consider the change complete when all tests pass without any errors
 
-**ALWAYS use conventional commit format:**
+### Testing Strategy for Speed
+- **Primary command**: `make test-fast` - Use this for all development testing
+- **Why it's faster**: No coverage collection, parallel workers, bail on first failure
+- **Full coverage**: Use `npm run test:coverage` only when needed for final validation
+- **Specific tests**: Use `npm run test -- specific.test.ts` to run single test files
 
-```
-<type>(<scope>): <description>
+## Development Notes
+- No need to implement heavy game logic yet
 
-[optional body]
-
-[optional footer]
-```
-
-**Types:**
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `style`: Code style changes (formatting, etc.)
-- `refactor`: Code refactoring
-- `test`: Adding or updating tests
-- `chore`: Build process or auxiliary tool changes
-- `perf`: Performance improvements
-- `ci`: CI/CD changes
-
-**Examples:**
-```bash
-feat: add user authentication API
-fix(frontend): resolve login form validation
-docs: update API documentation
-refactor(backend): simplify database connection logic
-test: add unit tests for user service
-```
-
-### File Scope Restrictions
-
-**IMPORTANT: Only work within this repository:**
-
-✅ **ALLOWED:**
-- Files under `/Users/nuttakit/project/zk/zkth-zkhack2025/`
-- Reading, editing, creating files in this project
-- Running commands within this project directory
-
-❌ **FORBIDDEN:**
-- Modifying files outside this repository
-- Global system configuration changes
-- Editing files in other projects
-- Modifying global Git configuration
-- Installing global packages without explicit permission
-
-### Code Quality Standards
-
-- **Rust**: Follow standard Rust conventions, use `cargo fmt` and `cargo clippy`
-- **TypeScript/React**: Follow Next.js and React best practices
-- **Testing**: Write tests for new features and bug fixes
-- **Documentation**: Update documentation for significant changes
-
-## 🧪 Testing
-
-- **Backend**: `cargo test`
-- **Frontend**: `npm test`
-- **E2E**: To be configured
-
-## 📦 Dependencies
-
-### Backend Dependencies (Cargo.toml)
-- Core Rust dependencies to be added based on requirements
-
-### Frontend Dependencies (package.json)
-- Next.js 15
-- React 19
-- TypeScript
-- Tailwind CSS
-- ESLint
-
-## 🔧 Configuration
-
-- **Backend config**: `src/backend/config/`
-- **Frontend config**: `next.config.ts`, `tailwind.config.js`
-- **Development**: Environment variables in `.env.local`
-
-## 📝 Notes
-
-This is a ZK Hack 2025 project focusing on zero-knowledge proofs and blockchain technology. The monolith architecture allows for rapid development and easy deployment while maintaining clear separation between frontend and backend concerns.
+## Commit Conventions
+- When making commits, divide changed files into reasonable commit groups
+- Follow GitHub commit message convention for clear and consistent commit messages

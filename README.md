@@ -34,15 +34,53 @@ This project is built for ZK Hack 2025, showcasing practical applications of zer
 ### Development Setup
 
 ```bash
-# Start development environment
-make dev
+# Start frontend development server
+cd src/frontend
+npm install
+npm run dev
+
+# The frontend will be available at http://localhost:3001
+# Backend ZK proof service should be running at http://localhost:8080
 
 # Run tests
-make test
+npm run test
 
 # Build for production
-make build
+npm run build
 ```
+
+### Game Features (Implemented)
+
+#### 🎮 Core Battle Royale System
+- ✅ **Interactive Battle Royale Interface** - Complete game lobby, preparation, and active gameplay phases
+- ✅ **Arena Mode Selection** - Choose between Virtual Arena and Real World Arena
+- ✅ **Game State Management** - Complete React context-based state handling
+- ✅ **Backend Integration** - Connection to Rust ZK proof service at localhost:8080
+
+#### 🗺️ Dual Arena Modes
+- ✅ **Virtual Arena** - Practice mode with simulated 2D battlefield and AI opponents
+- ✅ **Real World Arena** - Play using actual GPS location with OpenStreetMap integration
+- ✅ **Interactive Maps** - Click-to-move in virtual mode, real-time location tracking in real-world mode
+- ✅ **Arena Zones** - Safe zones and shrinking mechanics visualization for both modes
+
+#### 🔐 Zero-Knowledge Privacy System
+- ✅ **Location Permission Management** - Smart location access requests with proper error handling
+- ✅ **Real-time Location Tracking** - GPS-based gameplay with configurable accuracy levels
+- ✅ **Privacy Controls** - Granular settings for location sharing, proof intervals, and movement thresholds
+- ✅ **ZK Proof Integration** - Location verification without revealing exact coordinates
+- ✅ **Anti-cheat Protection** - Movement validation, speed limits, and trust scoring
+
+#### 🛡️ Advanced Privacy Features
+- ✅ **Anonymous Mode** - Hide player identity in ZK proofs
+- ✅ **Location Obfuscation** - Add random noise to coordinates for enhanced privacy
+- ✅ **Configurable Accuracy** - Choose between high (±5m), medium (±50m), and low (±200m) precision
+- ✅ **Manual/Automatic Proofs** - Control when ZK proofs are generated
+
+#### 📱 User Experience
+- ✅ **Responsive Design** - Works on desktop and mobile devices
+- ✅ **Real-time UI Updates** - Live status indicators and game statistics
+- ✅ **Professional Gaming Interface** - Dark theme with cyan/purple accents
+- ✅ **Location Status Monitoring** - Visual feedback for GPS accuracy and connection status
 
 ## 🔐 Privacy Features
 
