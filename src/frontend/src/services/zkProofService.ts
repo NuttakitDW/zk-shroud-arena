@@ -21,12 +21,13 @@ import {
   H3Index
 } from '../types/zkProof';
 import { phaseManager } from './phaseManager';
+import { env } from '../config/environment';
 
 /**
  * Default configuration for ZK proof service
  */
 const DEFAULT_CONFIG: ZkProofServiceConfig = {
-  baseUrl: 'http://localhost:8080',
+  baseUrl: env.BACKEND_URL,
   timeout: 30000, // 30 seconds
   retryAttempts: 3,
   retryDelay: 1000, // 1 second
@@ -226,7 +227,7 @@ export class ZkProofService {
         throw new Error('API requests not allowed in current game phase');
       }
 
-      const response = await fetch(`${this.config.baseUrl}/prove`, {
+      const response = await fetch(`${this.config.baseUrl}${env.API.PROVE}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -270,7 +271,7 @@ export class ZkProofService {
         throw new Error('API requests not allowed in current game phase');
       }
 
-      const response = await fetch(`${this.config.baseUrl}/verify`, {
+      const response = await fetch(`${this.config.baseUrl}${env.API.VERIFY}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

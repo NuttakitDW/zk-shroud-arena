@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
+import React, { useState, useCallback, useEffect } from 'react';
+import { MapContainer, TileLayer, useMapEvents, Marker, Circle, useMap } from 'react-leaflet';
 import * as h3 from 'h3-js';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { SimpleH3Controls } from './SimpleH3Controls';
 import { H3Zone } from './types';
+import dynamic from 'next/dynamic';
 
 interface SimpleH3MapProps {
   onZonesChange?: (zones: H3Zone[]) => void;
@@ -14,6 +15,8 @@ interface SimpleH3MapProps {
   height?: string;
   defaultCenter?: [number, number];
   defaultZoom?: number;
+  locationEnabled?: boolean;
+  onLocationUpdate?: (lat: number, lng: number) => void;
 }
 
 // H3 cell click handler component
@@ -94,12 +97,86 @@ const H3ZoneRenderer: React.FC<{ zones: H3Zone[] }> = ({ zones }) => {
   return null;
 };
 
+// Simple location tracker component
+const LocationTracker: React.FC<{ 
+  enabled?: boolean;
+  onLocationUpdate?: (lat: number, lng: number) => void;
+}> = ({ enabled, onLocationUpdate }) => {
+  const map = useMap();
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+
+  React.useEffect(() => {
+    if (!enabled || !navigator.geolocation) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const newLocation: [number, number] = [position.coords.latitude, position.coords.longitude];
+        setUserLocation(newLocation);
+        onLocationUpdate?.(position.coords.latitude, position.coords.longitude);
+        
+        // Center map on first location update
+        if (!userLocation) {
+          map.setView(newLocation, map.getZoom());
+        }
+      },
+      (error) => {
+        console.warn('Location error:', error.message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [enabled, map, onLocationUpdate, userLocation]);
+
+  if (!userLocation || !enabled) return null;
+
+  const playerIcon = L.divIcon({
+    className: 'player-location-marker',
+    html: `
+      <div style="
+        width: 24px;
+        height: 24px;
+        background-color: #3b82f6;
+        border: 3px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      "></div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+
+  return (
+    <>
+      <Marker position={userLocation} icon={playerIcon} />
+      <Circle
+        center={userLocation}
+        radius={5}
+        pathOptions={{
+          fillColor: '#3b82f6',
+          fillOpacity: 0.2,
+          color: '#3b82f6',
+          weight: 2
+        }}
+      />
+    </>
+  );
+};
+
 const SimpleH3Map: React.FC<SimpleH3MapProps> = ({
   onZonesChange,
   existingZones = [],
   height = '100%',
   defaultCenter = [13.7563, 100.5018], // Bangkok
-  defaultZoom = 19
+  defaultZoom = 19,
+  locationEnabled = false,
+  onLocationUpdate
 }) => {
   const [zones, setZones] = useState<H3Zone[]>(existingZones);
   const [resolution, setResolution] = useState(11); // Default to "Building" size (~25m)
@@ -141,6 +218,11 @@ const SimpleH3Map: React.FC<SimpleH3MapProps> = ({
         />
         
         <H3ZoneRenderer zones={zones} />
+        
+        <LocationTracker 
+          enabled={locationEnabled}
+          onLocationUpdate={onLocationUpdate}
+        />
       </MapContainer>
       
       {onZonesChange && (
