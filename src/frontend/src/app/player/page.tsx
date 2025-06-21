@@ -24,6 +24,11 @@ const SimpleZoneProximity = dynamic(
   { ssr: false }
 );
 
+const BackendStatus = dynamic(
+  () => import('../../components/BackendStatus').then(m => m.BackendStatus),
+  { ssr: false }
+);
+
 export default function PlayerPage() {
   const [zones, setZones] = useState<H3Zone[]>([]);
   const [playerHealth] = useState(100);
@@ -245,6 +250,11 @@ export default function PlayerPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Backend Status */}
+          <div className="mt-4">
+            <BackendStatus />
           </div>
 
           {/* Back Button */}

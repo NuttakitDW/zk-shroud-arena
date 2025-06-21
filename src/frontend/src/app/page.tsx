@@ -14,7 +14,8 @@ import {
 import { GameContextProvider } from '../contexts/GameContext';
 import { GamePhase, ZKProofStatus } from '../types/gameState';
 import { LocationCoordinates } from '../types/zkProof';
-import { MapPin, Map, Globe, UserCheck, Users } from 'lucide-react';
+import { MapPin, Map, Globe, UserCheck, Users, Shield } from 'lucide-react';
+import { env } from '../config/environment';
 
 // Dynamic import for RealWorldArena to prevent SSR issues with Leaflet
 const RealWorldArena = dynamic(
@@ -53,7 +54,7 @@ export default function ZKShroudArena() {
   useEffect(() => {
     const checkBackend = async () => {
       try {
-        const response = await fetch('http://localhost:8080/healthz');
+        const response = await fetch(env.getApiUrl(env.API.HEALTHZ));
         setBackendConnected(response.ok);
       } catch {
         setBackendConnected(false);
@@ -183,6 +184,32 @@ export default function ZKShroudArena() {
                     Open two browser tabs: one as Game Manager to draw zones, and another as Player to see them appear in real-time!
                   </p>
                 </div>
+              </div>
+
+              {/* ZK Proof Demo Buttons */}
+              <div className="text-center mb-8 space-y-4">
+                <div className="flex gap-4 justify-center">
+                  <a
+                    href="/proof-demo"
+                    className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-xl font-bold text-white shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                  >
+                    <Shield className="w-5 h-5" />
+                    <span>Simple ZK Demo</span>
+                  </a>
+                  <a
+                    href="/proof-demo-advanced"
+                    className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl font-bold text-white shadow-lg hover:shadow-xl transition-all hover:scale-105 relative"
+                  >
+                    <Shield className="w-5 h-5" />
+                    <span>Advanced ZK Demo</span>
+                    <span className="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs px-2 py-1 rounded-full font-bold animate-pulse">
+                      NEW
+                    </span>
+                  </a>
+                </div>
+                <p className="text-sm text-gray-400">
+                  Simple: Pre-made zones | Advanced: Draw H3 zones + real API calls
+                </p>
               </div>
 
               <div className="bg-gray-800 rounded-lg p-6 max-w-2xl mx-auto mb-8">
