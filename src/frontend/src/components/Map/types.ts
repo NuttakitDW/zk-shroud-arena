@@ -1,5 +1,35 @@
 // Shared type definitions for Map and Location components
 
+// H3 Hexagon zone types
+export interface H3Zone {
+  id: string;
+  h3Index: string;
+  center: Coordinates;
+  type: 'safe' | 'danger';
+  pointValue: number;
+  name: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface H3ZoneGroup {
+  id: string;
+  name: string;
+  h3Indices: string[];
+  type: 'safe' | 'danger';
+  pointValue: number;
+  color?: string;
+  description?: string;
+}
+
+export interface ZoneDrawingState {
+  isDrawing: boolean;
+  currentZone: string[]; // H3 indices being drawn
+  zoneType: 'safe' | 'danger';
+  pointValue: number;
+  drawMode: 'single' | 'area' | 'path';
+}
+
 export interface Position {
   x: number;
   y: number;

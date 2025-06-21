@@ -1,6 +1,7 @@
 // Location components exports
 export { LocationTracker } from './LocationTracker';
 export { LocationPrivacyControls } from './LocationPrivacyControls';
+export { default as ZoneProximityIndicator } from './ZoneProximityIndicator';
 
 // Types exports
 export type {

@@ -5,24 +5,27 @@
 // Mock the phaseManager first (before importing apiController)
 jest.mock('../../services/phaseManager', () => {
   // Need to use string values since GamePhase enum is not available in mock scope
-  let currentPhase = 'LOBBY';
+  let currentPhase = 'lobby';
   
-  return {
-    phaseManager: {
-      getCurrentPhase: jest.fn(() => currentPhase),
-      setPhase: jest.fn((phase) => { currentPhase = phase; }),
-      isActionAllowed: jest.fn((action) => {
-        if (currentPhase === 'LOBBY') return false;
-        if (currentPhase === 'GAME_OVER') return false;
-        if (currentPhase === 'ENDED') return false;
-        if (action === 'canGenerateProofs' && currentPhase === 'PREPARATION') return true;
-        if (action === 'canGenerateProofs' || action === 'canVerifyProofs') {
-          return ['ACTIVE', 'SHRINKING', 'ZONE_SHRINKING', 'FINAL_ZONE'].includes(currentPhase);
-        }
-        return false;
-      })
-    }
+  const phaseManager = {
+    getCurrentPhase: jest.fn(() => currentPhase),
+    setPhase: jest.fn((phase) => { 
+      currentPhase = phase.toLowerCase();
+    }),
+    isActionAllowed: jest.fn((action) => {
+      const phase = currentPhase.toLowerCase();
+      if (phase === 'lobby') return false;
+      if (phase === 'game_over') return false;
+      if (phase === 'ended') return false;
+      if (action === 'canGenerateProofs' && phase === 'preparation') return true;
+      if (action === 'canGenerateProofs' || action === 'canVerifyProofs') {
+        return ['active', 'shrinking', 'zone_shrinking', 'final_zone'].includes(phase);
+      }
+      return false;
+    })
   };
+  
+  return { phaseManager };
 });
 
 // Mock the zkProofService to return successful results without phase checks
