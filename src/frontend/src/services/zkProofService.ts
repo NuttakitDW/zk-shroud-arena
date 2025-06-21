@@ -57,8 +57,8 @@ export class ZkProofService {
     options: ProofRequestOptions = {}
   ): Promise<ProveResult> {
     try {
-      // Check if proof generation is allowed in current phase
-      if (!phaseManager.isActionAllowed('canGenerateProofs')) {
+      // Check if proof generation is allowed in current phase (unless bypassed)
+      if (!options.bypassPhaseCheck && !phaseManager.isActionAllowed('canGenerateProofs')) {
         const currentPhase = phaseManager.getCurrentPhase();
         return {
           success: false,
@@ -149,8 +149,8 @@ export class ZkProofService {
     options: ProofRequestOptions = {}
   ): Promise<VerifyResult> {
     try {
-      // Check if proof verification is allowed in current phase
-      if (!phaseManager.isActionAllowed('canVerifyProofs')) {
+      // Check if proof verification is allowed in current phase (unless bypassed)
+      if (!options.bypassPhaseCheck && !phaseManager.isActionAllowed('canVerifyProofs')) {
         const currentPhase = phaseManager.getCurrentPhase();
         return {
           success: false,
@@ -223,7 +223,7 @@ export class ZkProofService {
 
     try {
       // Additional phase check before making API request
-      if (!phaseManager.canMakeAPIRequest('/prove')) {
+      if (!options.bypassPhaseCheck && !phaseManager.canMakeAPIRequest('/prove')) {
         throw new Error('API requests not allowed in current game phase');
       }
 
@@ -267,7 +267,7 @@ export class ZkProofService {
 
     try {
       // Additional phase check before making API request
-      if (!phaseManager.canMakeAPIRequest('/verify')) {
+      if (!options.bypassPhaseCheck && !phaseManager.canMakeAPIRequest('/verify')) {
         throw new Error('API requests not allowed in current game phase');
       }
 

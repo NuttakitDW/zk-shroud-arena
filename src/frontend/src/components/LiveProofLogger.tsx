@@ -174,12 +174,12 @@ export const LiveProofLogger: React.FC<LiveProofLoggerProps> = ({
       console.log(`Endpoint: ${env.BACKEND_URL}/prove`);
       console.log('Request Payload:', JSON.stringify(provePayload, null, 2));
 
-      // Generate the proof
+      // Generate the proof (bypass phase check for demo)
       const result = await zkProofService.generateProof(
         playerLocation,
         h3.getResolution(currentZone.h3Index),
         [currentZone.h3Index],
-        { useCache: false }
+        { useCache: false, bypassPhaseCheck: true }
       );
 
       if (result.success && result.data) {
@@ -237,7 +237,7 @@ export const LiveProofLogger: React.FC<LiveProofLoggerProps> = ({
         const verifyResult = await zkProofService.verifyProof(
           result.data.proof,
           result.data.public_inputs,
-          { useCache: false }
+          { useCache: false, bypassPhaseCheck: true }
         );
 
         console.log('\n✅ Verify Response:');
