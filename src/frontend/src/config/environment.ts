@@ -6,9 +6,10 @@
 export const env = {
   /**
    * Backend API URL
-   * Defaults to localhost:8080 if not specified
+   * In production, we use the proxy path to avoid mixed content issues
+   * In development, we can use direct localhost connection
    */
-  BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080',
+  BACKEND_URL: process.env.NODE_ENV === 'production' ? '/api' : (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'),
   
   /**
    * API endpoints

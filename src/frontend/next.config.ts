@@ -25,7 +25,15 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ['lucide-react']
-  }
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://34.51.151.9:8080/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
