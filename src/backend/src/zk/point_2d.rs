@@ -2,11 +2,6 @@ use ark_ff::PrimeField;
 
 use crate::zk::fixed_point_decimal::{Dec, DecVar};
 
-pub struct Point2D {
-    pub x: f64,
-    pub y: f64,
-}
-
 #[derive(Clone, Copy)]
 pub struct Point2DDec<F: PrimeField, const PREC: u32> {
     pub x: Dec<F, PREC>,
@@ -19,10 +14,6 @@ impl<F: PrimeField, const PREC: u32> Point2DDec<F, PREC> {
             x: Dec::from_f64(x),
             y: Dec::from_f64(y),
         }
-    }
-
-    pub fn from_point2d(p: &Point2D) -> Self {
-        Self::from_f64(p.x, p.y)
     }
 }
 
