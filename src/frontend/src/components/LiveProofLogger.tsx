@@ -11,6 +11,7 @@ interface LiveProofLoggerProps {
   playerLocation?: { latitude: number; longitude: number };
   currentZone?: H3Zone | null;
   className?: string;
+  onProofGenerated?: (proof: any) => void;
 }
 
 interface ProofEvent {
@@ -25,14 +26,15 @@ interface ProofEvent {
 export const LiveProofLogger: React.FC<LiveProofLoggerProps> = ({ 
   playerLocation, 
   currentZone,
-  className = '' 
+  className = '',
+  onProofGenerated
 }) => {
   const [events, setEvents] = useState<ProofEvent[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastProof, setLastProof] = useState<any>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [autoGenerate, setAutoGenerate] = useState(true);
-  const [demoMode, setDemoMode] = useState(true); // Default to demo mode
+  const [demoMode, setDemoMode] = useState(false); // Default to real API mode
 
   const addEvent = useCallback((event: Omit<ProofEvent, 'id' | 'timestamp'>) => {
     const newEvent: ProofEvent = {
@@ -90,6 +92,7 @@ export const LiveProofLogger: React.FC<LiveProofLoggerProps> = ({
     };
 
     setLastProof(mockProof);
+    onProofGenerated?.(mockProof);
     
     addEvent({
       type: 'success',
@@ -195,6 +198,9 @@ export const LiveProofLogger: React.FC<LiveProofLoggerProps> = ({
         
         console.log('✅ Proof Generated Successfully!');
         console.log(JSON.stringify(formattedProof, null, 2));
+        
+        // Notify parent component
+        onProofGenerated?.(formattedProof);
         
         addEvent({
           type: 'success',
