@@ -144,18 +144,18 @@ pub async fn prove(
     let pub_hash_copy = pub_hash_arr;
 
     // --- debug: count constraints ---------------------------------
-    let cs_dbg = ConstraintSystem::<F>::new_ref();
-    PointInMapCircuit::<F, PREC, MAX_VERTS, MAX_HASHES>::new(
-        Point2DDec::from_f64(x, y),
-        poly_copy,
-        n as u64,
-        final_flag,
-        pub_hash_copy,
-        cfg.clone(),
-    )
-    .generate_constraints(cs_dbg.clone())
-    .unwrap();
-    let num_constraints = cs_dbg.num_constraints(); // --- debug
+    // let cs_dbg = ConstraintSystem::<F>::new_ref();
+    // PointInMapCircuit::<F, PREC, MAX_VERTS, MAX_HASHES>::new(
+    //     Point2DDec::from_f64(x, y),
+    //     poly_copy,
+    //     n as u64,
+    //     final_flag,
+    //     pub_hash_copy,
+    //     cfg.clone(),
+    // )
+    // .generate_constraints(cs_dbg.clone())
+    // .unwrap();
+    // let num_constraints = cs_dbg.num_constraints(); // --- debug
 
     // main proving circuit (moves original arrays)
     let circuit = PointInMapCircuit::<F, PREC, MAX_VERTS, MAX_HASHES>::new(
@@ -200,7 +200,7 @@ pub async fn prove(
         // "inside_polygon": inside_poly,
         // "hash_found_in_map": hash_match,
         // "in_map_final": final_flag,
-        "num_constraints": num_constraints,            // --- debug
+        // "num_constraints": num_constraints,            // --- debug
 
         "proof": proof_json,
         "public_inputs": publics_b64
