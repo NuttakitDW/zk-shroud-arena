@@ -7,6 +7,10 @@ import 'leaflet/dist/leaflet.css';
 import { locationService, LocationUpdate, LocationError } from '../../services/locationService';
 import { LocationCoordinates } from '../../types/zkProof';
 import { GamePhase } from '../../types/gameState';
+import { H3Zone, ZoneDrawingState } from './types';
+import { GameManagerControls } from './GameManagerControls';
+import { H3Layer } from './H3Layer';
+import * as h3 from 'h3-js';
 
 // Fix for default Leaflet markers in React
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl: unknown })._getIconUrl;
@@ -26,6 +30,9 @@ export interface RealWorldMapProps {
   showAccuracyCircle?: boolean;
   enableLocationTracking?: boolean;
   centerOnUser?: boolean;
+  isGameManager?: boolean;
+  onZoneCreate?: (zone: H3Zone) => void;
+  existingZones?: H3Zone[];
 }
 
 interface LocationPermissionPromptProps {
@@ -134,7 +141,10 @@ export const RealWorldMap: React.FC<RealWorldMapProps> = ({
   onZKProofRequest,
   showAccuracyCircle = true,
   enableLocationTracking = true,
-  centerOnUser = true
+  centerOnUser = true,
+  isGameManager = false,
+  onZoneCreate,
+  existingZones = []
 }) => {
   const [userLocation, setUserLocation] = useState<LocationCoordinates | null>(null);
   const [locationAccuracy, setLocationAccuracy] = useState<number>(0);
@@ -143,6 +153,17 @@ export const RealWorldMap: React.FC<RealWorldMapProps> = ({
   const [isTracking, setIsTracking] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number]>([37.7749, -122.4194]); // Default to San Francisco
   const [hasRequestedLocation, setHasRequestedLocation] = useState(false);
+  
+  // Zone drawing state
+  const [zones, setZones] = useState<H3Zone[]>(existingZones);
+  const [drawingState, setDrawingState] = useState<ZoneDrawingState>({
+    isDrawing: false,
+    currentZone: [],
+    zoneType: 'safe',
+    pointValue: 10,
+    drawMode: 'single'
+  });
+  const [currentDrawnIndices, setCurrentDrawnIndices] = useState<string[]>([]);
 
   // Handle location updates
   const handleLocationUpdate = useCallback((update: LocationUpdate) => {
@@ -227,10 +248,45 @@ export const RealWorldMap: React.FC<RealWorldMapProps> = ({
 
   // Handle map clicks for manual location selection
   const handleMapClick = useCallback((location: LocationCoordinates) => {
-    if (gamePhase === GamePhase.ACTIVE && onZKProofRequest) {
+    if (gamePhase === GamePhase.ACTIVE && onZKProofRequest && !drawingState.isDrawing) {
       onZKProofRequest(location);
     }
-  }, [gamePhase, onZKProofRequest]);
+  }, [gamePhase, onZKProofRequest, drawingState.isDrawing]);
+
+  // Handle zone confirmation
+  const handleConfirmZone = useCallback((zoneData: { h3Indices: string[], type: 'safe' | 'danger', pointValue: number, name: string }) => {
+    const newZones: H3Zone[] = currentDrawnIndices.map((h3Index, index) => {
+      const [lat, lng] = h3.cellToLatLng(h3Index);
+      return {
+        id: `zone-${Date.now()}-${index}`,
+        h3Index,
+        center: { latitude: lat, longitude: lng },
+        type: zoneData.type,
+        pointValue: zoneData.pointValue,
+        name: zoneData.name,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+    });
+
+    setZones(prev => [...prev, ...newZones]);
+    setCurrentDrawnIndices([]);
+    
+    // Notify parent component
+    if (onZoneCreate) {
+      newZones.forEach(zone => onZoneCreate(zone));
+    }
+  }, [currentDrawnIndices, onZoneCreate]);
+
+  // Handle undo
+  const handleUndo = useCallback(() => {
+    setCurrentDrawnIndices(prev => prev.slice(0, -1));
+  }, []);
+
+  // Handle clear
+  const handleClear = useCallback(() => {
+    setCurrentDrawnIndices([]);
+  }, []);
 
   return (
     <div className={`relative ${className}`} style={{ height }}>
@@ -258,7 +314,18 @@ export const RealWorldMap: React.FC<RealWorldMapProps> = ({
           centerOnUser={centerOnUser}
         />
         
-        <MapClickHandler onMapClick={handleMapClick} />
+        {!isGameManager && <MapClickHandler onMapClick={handleMapClick} />}
+        
+        {/* H3 Zone Layer for Game Managers */}
+        {isGameManager && (
+          <H3Layer
+            zones={zones}
+            drawingState={drawingState}
+            currentDrawnIndices={currentDrawnIndices}
+            onDrawnIndicesChange={setCurrentDrawnIndices}
+            showPreview={true}
+          />
+        )}
         
         {userLocation && (
           <>
@@ -348,6 +415,18 @@ export const RealWorldMap: React.FC<RealWorldMapProps> = ({
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Game Manager Controls */}
+      {isGameManager && (
+        <GameManagerControls
+          onZoneDrawingStateChange={setDrawingState}
+          onConfirmZone={handleConfirmZone}
+          onUndo={handleUndo}
+          onClear={handleClear}
+          currentZoneCount={currentDrawnIndices.length}
+          isDrawing={drawingState.isDrawing}
+        />
       )}
     </div>
   );

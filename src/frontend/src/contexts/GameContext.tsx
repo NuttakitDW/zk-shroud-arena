@@ -13,7 +13,9 @@ import {
   GameStateSnapshot,
   GameContextProviderProps,
   UseGameStateReturn,
-  GameUpdate
+  GameUpdate,
+  GameWarning,
+  LeaderboardEntry
 } from '../types/gameState';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { phaseManager } from '../services/phaseManager';
@@ -47,6 +49,10 @@ const createInitialState = (gameId: string = 'default'): GameState => ({
     proofStatus: ZKProofStatus.NONE,
     isAlive: true,
     lastActivity: Date.now(),
+    coins: 0,
+    eliminations: 0,
+    survivalTime: 0,
+    score: 0,
   },
   arenaState: {
     currentZone: {
@@ -94,6 +100,8 @@ const createInitialState = (gameId: string = 'default'): GameState => ({
   },
   gameId,
   lastUpdated: Date.now(),
+  leaderboard: [],
+  warnings: [],
 });
 
 // Game state reducer
@@ -244,6 +252,48 @@ const gameStateReducer = (state: GameState, action: GameAction): GameState => {
           h3Map,
           h3Resolution: resolution,
         },
+        lastUpdated: timestamp,
+      };
+      
+    case GameActionType.UPDATE_PLAYER_COINS:
+      return {
+        ...state,
+        playerState: {
+          ...state.playerState,
+          coins: action.payload as number,
+        },
+        lastUpdated: timestamp,
+      };
+      
+    case GameActionType.UPDATE_PLAYER_ELIMINATIONS:
+      return {
+        ...state,
+        playerState: {
+          ...state.playerState,
+          eliminations: action.payload as number,
+        },
+        lastUpdated: timestamp,
+      };
+      
+    case GameActionType.ADD_WARNING:
+      const warning = action.payload as GameWarning;
+      return {
+        ...state,
+        warnings: [...(state.warnings || []), warning].slice(-5), // Keep last 5 warnings
+        lastUpdated: timestamp,
+      };
+      
+    case GameActionType.REMOVE_WARNING:
+      return {
+        ...state,
+        warnings: (state.warnings || []).filter(w => w.id !== action.payload),
+        lastUpdated: timestamp,
+      };
+      
+    case GameActionType.UPDATE_LEADERBOARD:
+      return {
+        ...state,
+        leaderboard: action.payload as LeaderboardEntry[],
         lastUpdated: timestamp,
       };
       
@@ -640,6 +690,48 @@ export const GameContextProvider: React.FC<GameContextProviderProps> = ({
     
     getWebSocketStatus: () => {
       return enableRealtime ? webSocket.connectionInfo : null;
+    },
+    
+    updatePlayerCoins: (coins: number) => {
+      dispatch({
+        type: GameActionType.UPDATE_PLAYER_COINS,
+        payload: coins,
+      });
+    },
+    
+    updatePlayerEliminations: (eliminations: number) => {
+      dispatch({
+        type: GameActionType.UPDATE_PLAYER_ELIMINATIONS,
+        payload: eliminations,
+      });
+    },
+    
+    addWarning: (message: string, severity: 'low' | 'medium' | 'high' | 'critical' = 'medium') => {
+      const warning: GameWarning = {
+        id: `warning_${Date.now()}`,
+        message,
+        severity,
+        timestamp: Date.now(),
+        expiresAt: Date.now() + 10000, // 10 seconds
+      };
+      dispatch({
+        type: GameActionType.ADD_WARNING,
+        payload: warning,
+      });
+    },
+    
+    removeWarning: (warningId: string) => {
+      dispatch({
+        type: GameActionType.REMOVE_WARNING,
+        payload: warningId,
+      });
+    },
+    
+    updateLeaderboard: (leaderboard: LeaderboardEntry[]) => {
+      dispatch({
+        type: GameActionType.UPDATE_LEADERBOARD,
+        payload: leaderboard,
+      });
     }
   }), [loadStateSnapshot, enableRealtime, webSocket, gameId]);
 

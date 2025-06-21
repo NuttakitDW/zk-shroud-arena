@@ -122,4 +122,5 @@ export type ProofRequestOptions = {
   timeout?: number;
   useCache?: boolean;
   retryAttempts?: number;
+  force?: boolean; // Force proof generation bypassing rate limits
 };

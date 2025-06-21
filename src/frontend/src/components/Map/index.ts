@@ -2,8 +2,8 @@
 export { GameMap } from './GameMap';
 export { ArenaZone } from './ArenaZone';
 export { PlayerIndicator } from './PlayerIndicator';
-// Note: RealWorldMap is excluded from exports to prevent SSR issues with Leaflet
-// Import RealWorldMap directly where needed using dynamic imports
+// Note: RealWorldMap, GameManagerControls, H3Layer, and H3ZoneOverlay are excluded from exports to prevent SSR issues with Leaflet
+// Import these components directly where needed using dynamic imports
 
 // Types exports
 export type {
@@ -33,6 +33,10 @@ export type {
   BaseMapProps,
   UseMapOptions,
   UseMapReturn,
+  H3Zone,
+  H3ZoneGroup,
+  ZoneDrawingState,
+  Coordinates,
 } from './types';
 
 // Constants exports

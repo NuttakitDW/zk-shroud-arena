@@ -9,11 +9,13 @@ import {
   SafeZone, 
   Coordinates,
   ZKProofStatus,
-  ZKProofData
+  ZKProofData,
+  PlayerState
 } from '../../types/gameState';
 import { LocationCoordinates } from '../../types/zkProof';
 import { generateLocationProofControlled } from '../../services/apiController';
 import { getWebSocketService } from '../../services/websocketService';
+import { GameRulesEngine, GameEvent as RulesEvent } from './GameRulesEngine';
 
 export interface GameEngineConfig {
   arenaSize: { width: number; height: number };
@@ -96,6 +98,8 @@ export class GameEngine {
   private state: GameEngineState;
   private gameStateUpdater: (updater: (state: GameState) => GameState) => void;
   private currentGameId?: string;
+  private rulesEngine: GameRulesEngine;
+  private rulesProcessingTimer?: number;
   
   constructor(
     config: Partial<GameEngineConfig> = {},
@@ -103,6 +107,7 @@ export class GameEngine {
   ) {
     this.config = { ...DEFAULT_ENGINE_CONFIG, ...config };
     this.gameStateUpdater = gameStateUpdater;
+    this.rulesEngine = new GameRulesEngine();
     
     this.state = {
       isRunning: false,
@@ -191,6 +196,7 @@ export class GameEngine {
     this.startDamageZoneLoop();
     this.startBotMovementLoop();
     this.startZoneShrinkLoop();
+    this.startRulesProcessingLoop();
     
     // Transition to active phase after preparation
     setTimeout(() => {
@@ -212,6 +218,9 @@ export class GameEngine {
     }
     if (this.state.botMovementTimer) {
       clearInterval(this.state.botMovementTimer);
+    }
+    if (this.rulesProcessingTimer) {
+      clearInterval(this.rulesProcessingTimer);
     }
     
     // Update game phase
@@ -264,9 +273,16 @@ export class GameEngine {
         },
         health: 100,
         maxHealth: 100,
-        isAlive: true
+        isAlive: true,
+        coins: 0,
+        eliminations: 0,
+        survivalTime: 0,
+        score: 0
       }
     }));
+    
+    // Initialize player in rules engine
+    this.rulesEngine.initializePlayer(playerId);
     
     return spawnPoint;
   }
@@ -584,16 +600,8 @@ export class GameEngine {
       const isPlayerInSafe = this.isInSafeZone(state.playerState.location, state.arenaState.currentZone);
       
       if (!isPlayerInSafe && state.playerState.isAlive) {
-        const newHealth = Math.max(0, state.playerState.health - this.config.zoneSettings.damagePerSecond);
-        
-        return {
-          ...state,
-          playerState: {
-            ...state.playerState,
-            health: newHealth,
-            isAlive: newHealth > 0
-          }
-        };
+        // Let rules engine handle damage calculation
+        return state; // Damage is now handled by rules engine
       }
       
       return state;
@@ -656,25 +664,186 @@ export class GameEngine {
     }
   }
 
+  /**
+   * Start rules processing loop
+   */
+  private startRulesProcessingLoop(): void {
+    this.rulesProcessingTimer = setInterval(() => {
+      this.processRulesEngine();
+    }, 100) as unknown as number; // Process rules 10 times per second
+  }
+
+  /**
+   * Process game rules and events
+   */
+  private processRulesEngine(): void {
+    if (!this.state.isRunning) return;
+    
+    this.gameStateUpdater(state => {
+      // Create player map for rules engine
+      const players = new Map<string, PlayerState>();
+      players.set(state.playerState.id, state.playerState);
+      
+      // Add bot players
+      this.state.botPlayers.forEach((bot, id) => {
+        players.set(id, {
+          id,
+          location: { ...bot.position, timestamp: Date.now(), zone: 'unknown' },
+          health: bot.health,
+          maxHealth: 100,
+          proofStatus: ZKProofStatus.NONE,
+          isAlive: bot.isAlive,
+          lastActivity: bot.lastMove,
+          coins: 0,
+          eliminations: 0,
+          survivalTime: 0,
+          score: 0
+        });
+      });
+      
+      // Process game tick
+      const events = this.rulesEngine.processTick(state, players);
+      
+      // Handle events
+      let newState = { ...state };
+      events.forEach(event => {
+        newState = this.handleRulesEvent(newState, event);
+      });
+      
+      // Update leaderboard
+      const leaderboard = this.rulesEngine.getLeaderboard();
+      const leaderboardEntries = leaderboard.map((stats, index) => ({
+        playerId: stats.id,
+        name: stats.id === state.playerState.id ? 'You' : stats.id,
+        coins: stats.coins,
+        eliminations: stats.eliminations,
+        score: stats.totalScore,
+        isAlive: players.get(stats.id)?.isAlive || false,
+        rank: index + 1
+      }));
+      
+      return {
+        ...newState,
+        leaderboard: leaderboardEntries
+      };
+    });
+  }
+
+  /**
+   * Handle events from rules engine
+   */
+  private handleRulesEvent(state: GameState, event: RulesEvent): GameState {
+    switch (event.type) {
+      case 'coin_earned':
+        if (event.playerId === state.playerState.id) {
+          return {
+            ...state,
+            playerState: {
+              ...state.playerState,
+              coins: event.data.total
+            }
+          };
+        }
+        break;
+        
+      case 'health_changed':
+        if (event.playerId === state.playerState.id) {
+          const newHealth = event.data.newHealth;
+          return {
+            ...state,
+            playerState: {
+              ...state.playerState,
+              health: newHealth,
+              isAlive: newHealth > 0
+            }
+          };
+        } else {
+          // Update bot health
+          const bot = this.state.botPlayers.get(event.playerId);
+          if (bot) {
+            bot.health = event.data.newHealth;
+            bot.isAlive = event.data.newHealth > 0;
+          }
+        }
+        break;
+        
+      case 'warning_issued':
+        if (event.playerId === state.playerState.id) {
+          const warning = {
+            id: `warning_${Date.now()}`,
+            message: event.data.message,
+            severity: event.data.severity,
+            timestamp: event.timestamp,
+            expiresAt: event.timestamp + 10000
+          };
+          return {
+            ...state,
+            warnings: [...(state.warnings || []), warning].slice(-5)
+          };
+        }
+        break;
+        
+      case 'player_eliminated':
+        if (event.playerId === state.playerState.id) {
+          return {
+            ...state,
+            playerState: {
+              ...state.playerState,
+              isAlive: false,
+              health: 0
+            },
+            gamePhase: {
+              ...state.gamePhase,
+              phase: GamePhase.GAME_OVER
+            }
+          };
+        } else {
+          // Update bot status
+          const bot = this.state.botPlayers.get(event.playerId);
+          if (bot) {
+            bot.isAlive = false;
+            bot.health = 0;
+          }
+        }
+        break;
+    }
+    
+    return state;
+  }
+
   private shrinkZone(): void {
     console.log('🔥 Zone is shrinking!');
     
     this.state.lastZoneShrink = Date.now();
     
+    // Get players in current zone before shrinking
+    const playersInZone: string[] = [];
+    this.gameStateUpdater(state => {
+      if (this.isInSafeZone(state.playerState.location, state.arenaState.currentZone)) {
+        playersInZone.push(state.playerState.id);
+      }
+      return state;
+    });
+    
     this.gameStateUpdater(state => {
       const currentZone = state.arenaState.currentZone;
       const newRadius = currentZone.radius * this.config.zoneSettings.shrinkRate;
+      
+      const newZone = {
+        ...currentZone,
+        radius: newRadius,
+        shrinkStartTime: Date.now(),
+        shrinkEndTime: Date.now() + 30000 // 30 seconds to shrink
+      };
+      
+      // Notify rules engine about zone shrink
+      this.rulesEngine.handleZoneShrink(newZone, playersInZone);
       
       return {
         ...state,
         arenaState: {
           ...state.arenaState,
-          currentZone: {
-            ...currentZone,
-            radius: newRadius,
-            shrinkStartTime: Date.now(),
-            shrinkEndTime: Date.now() + 30000 // 30 seconds to shrink
-          }
+          currentZone: newZone
         },
         gamePhase: {
           ...state.gamePhase,
@@ -775,3 +944,4 @@ export class GameEngine {
       }
     }
   }
+}

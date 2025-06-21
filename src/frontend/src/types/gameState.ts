@@ -29,6 +29,11 @@ export interface PlayerState {
   isAlive: boolean;
   lastActivity: number;
   team?: string;
+  coins: number;
+  eliminations: number;
+  survivalTime: number;
+  score: number;
+  gracePeriodEnds?: number;
 }
 
 // Arena state interfaces
@@ -124,10 +129,12 @@ export type GameUpdateData =
   | ZKProofData
   | { playerId: string; reason: string }
   | GamePhase
+  | { amount: number; total: number; reason?: string }
+  | { message: string; severity: string }
   | unknown; // Allow unknown type for flexibility with WebSocket messages
 
 export interface GameUpdate {
-  type: 'player_move' | 'zone_shrink' | 'proof_validation' | 'player_elimination' | 'game_phase';
+  type: 'player_move' | 'zone_shrink' | 'proof_validation' | 'player_elimination' | 'game_phase' | 'coin_earned' | 'health_changed' | 'warning_issued';
   timestamp: number;
   data: GameUpdateData;
   playerId?: string;
@@ -149,6 +156,26 @@ export interface GameState {
   realtimeState: RealtimeState;
   gameId: string;
   lastUpdated: number;
+  leaderboard?: LeaderboardEntry[];
+  warnings?: GameWarning[];
+}
+
+export interface LeaderboardEntry {
+  playerId: string;
+  name: string;
+  coins: number;
+  eliminations: number;
+  score: number;
+  isAlive: boolean;
+  rank: number;
+}
+
+export interface GameWarning {
+  id: string;
+  message: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  timestamp: number;
+  expiresAt: number;
 }
 
 // State actions for reducers
@@ -163,7 +190,12 @@ export enum GameActionType {
   SET_CONNECTION_STATUS = 'SET_CONNECTION_STATUS',
   RESET_GAME_STATE = 'RESET_GAME_STATE',
   HYDRATE_STATE = 'HYDRATE_STATE',
-  UPDATE_H3_MAP = 'UPDATE_H3_MAP'
+  UPDATE_H3_MAP = 'UPDATE_H3_MAP',
+  UPDATE_PLAYER_COINS = 'UPDATE_PLAYER_COINS',
+  UPDATE_PLAYER_ELIMINATIONS = 'UPDATE_PLAYER_ELIMINATIONS',
+  ADD_WARNING = 'ADD_WARNING',
+  REMOVE_WARNING = 'REMOVE_WARNING',
+  UPDATE_LEADERBOARD = 'UPDATE_LEADERBOARD'
 }
 
 export type GameActionPayload = 

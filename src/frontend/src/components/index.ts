@@ -20,6 +20,11 @@ export { GameStats } from './GameStats';
 export { ZKProofIndicator } from './ZKProofIndicator';
 export { ConnectionStatus } from './ConnectionStatus';
 
+// Zone Sync components
+export { ZoneSyncStatus, ZoneSyncIndicator } from './ZoneSyncStatus';
+export type { ZoneSyncStatusProps, ZoneSyncIndicatorProps } from './ZoneSyncStatus';
+export { ZoneSyncDemo } from './ZoneSyncDemo';
+
 // Example components
 export * from './examples';
 

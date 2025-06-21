@@ -11,6 +11,30 @@ import { GamePhase } from '../../types/gameState';
 import { LocationCoordinates } from '../../types/zkProof';
 import * as locationServiceModule from '../../services/locationService';
 
+// Mock the new components
+jest.mock('../../components/Map/GameManagerControls', () => ({
+  GameManagerControls: ({ children, ...props }: any) => (
+    <div data-testid="game-manager-controls" {...props}>
+      {children}
+    </div>
+  ),
+}));
+
+jest.mock('../../components/Map/H3Layer', () => ({
+  H3Layer: ({ zones, ...props }: any) => (
+    <div data-testid="h3-layer" data-zones={zones?.length || 0} {...props} />
+  ),
+}));
+
+// Mock h3-js
+jest.mock('h3-js', () => ({
+  cellToLatLng: jest.fn((h3Index: string) => [37.7749, -122.4194]),
+  latLngToCell: jest.fn((lat: number, lng: number, res: number) => 'mockH3Index'),
+  cellToBoundary: jest.fn((h3Index: string) => [[37.7749, -122.4194]]),
+  polygonToCells: jest.fn(() => ['mockH3Index1', 'mockH3Index2']),
+  gridPathCells: jest.fn(() => ['mockH3Index1', 'mockH3Index2']),
+}));
+
 // Mock react-leaflet components
 jest.mock('react-leaflet', () => ({
   MapContainer: ({ children, ...props }: any) => (

@@ -55,3 +55,7 @@ src/backend/Cargo.lock
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+dev.log
