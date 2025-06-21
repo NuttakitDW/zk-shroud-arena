@@ -186,29 +186,17 @@ export default function ZKShroudArena() {
                 </div>
               </div>
 
-              {/* ZK Proof Demo Buttons */}
-              <div className="text-center mb-8 space-y-4">
-                <div className="flex gap-4 justify-center">
-                  <a
-                    href="/proof-demo"
-                    className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-xl font-bold text-white shadow-lg hover:shadow-xl transition-all hover:scale-105"
-                  >
-                    <Shield className="w-5 h-5" />
-                    <span>Simple ZK Demo</span>
-                  </a>
-                  <a
-                    href="/proof-demo-advanced"
-                    className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl font-bold text-white shadow-lg hover:shadow-xl transition-all hover:scale-105 relative"
-                  >
-                    <Shield className="w-5 h-5" />
-                    <span>Advanced ZK Demo</span>
-                    <span className="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 text-xs px-2 py-1 rounded-full font-bold animate-pulse">
-                      NEW
-                    </span>
-                  </a>
-                </div>
-                <p className="text-sm text-gray-400">
-                  Simple: Pre-made zones | Advanced: Draw H3 zones + real API calls
+              {/* ZK Proof Demo Button */}
+              <div className="text-center mb-8">
+                <a
+                  href="/proof-demo"
+                  className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl font-bold text-white shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                >
+                  <Shield className="w-5 h-5" />
+                  <span>ZK Proof Demo</span>
+                </a>
+                <p className="text-sm text-gray-400 mt-2">
+                  Draw H3 zones on the map and see real ZK proofs in the console
                 </p>
               </div>
 

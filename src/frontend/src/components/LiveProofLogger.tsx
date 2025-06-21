@@ -160,15 +160,16 @@ export const LiveProofLogger: React.FC<LiveProofLoggerProps> = ({
       });
 
       // Log the API request
-      console.log('🚀 Calling Backend API:', {
-        endpoint: `${env.BACKEND_URL}/prove`,
-        payload: {
-          latitude: playerLocation.latitude,
-          longitude: playerLocation.longitude,
-          resolution: h3.getResolution(currentZone.h3Index),
-          h3_map: [currentZone.h3Index]
-        }
-      });
+      const provePayload = {
+        lat: playerLocation.latitude,
+        lon: playerLocation.longitude,
+        resolution: h3.getResolution(currentZone.h3Index),
+        h3_map: [currentZone.h3Index]
+      };
+      
+      console.log('🚀 Calling Backend API:');
+      console.log(`Endpoint: ${env.BACKEND_URL}/prove`);
+      console.log('Request Payload:', JSON.stringify(provePayload, null, 2));
 
       // Generate the proof
       const result = await zkProofService.generateProof(
@@ -178,18 +179,22 @@ export const LiveProofLogger: React.FC<LiveProofLoggerProps> = ({
         { useCache: false }
       );
 
-      // Log the full response
-      console.log('✅ Backend Response:', result);
-
       if (result.success && result.data) {
         setLastProof(result.data);
         
-        // Log the proof details
-        console.log('🔐 Proof Details:', {
+        // Log the formatted proof
+        const formattedProof = {
           proof: result.data.proof,
-          publicInputs: result.data.public_inputs,
-          metadata: result.data.metadata
-        });
+          public_inputs: result.data.public_inputs,
+          metadata: result.data.metadata || {
+            generated_at: new Date().toISOString(),
+            zone: currentZone.name,
+            h3_resolution: h3.getResolution(currentZone.h3Index)
+          }
+        };
+        
+        console.log('✅ Proof Generated Successfully!');
+        console.log(JSON.stringify(formattedProof, null, 2));
         
         addEvent({
           type: 'success',
@@ -214,13 +219,14 @@ export const LiveProofLogger: React.FC<LiveProofLoggerProps> = ({
           status: 'pending'
         });
 
-        console.log('🔍 Calling Verify API:', {
-          endpoint: `${env.BACKEND_URL}/verify`,
-          payload: {
-            proof: result.data.proof,
-            public_inputs: result.data.public_inputs
-          }
-        });
+        const verifyPayload = {
+          proof: result.data.proof,
+          public_inputs: result.data.public_inputs
+        };
+        
+        console.log('\n🔍 Calling Verify API:');
+        console.log(`Endpoint: ${env.BACKEND_URL}/verify`);
+        console.log('Verify Payload:', JSON.stringify(verifyPayload, null, 2));
 
         const verifyResult = await zkProofService.verifyProof(
           result.data.proof,
@@ -228,7 +234,12 @@ export const LiveProofLogger: React.FC<LiveProofLoggerProps> = ({
           { useCache: false }
         );
 
-        console.log('✅ Verify Response:', verifyResult);
+        console.log('\n✅ Verify Response:');
+        console.log(JSON.stringify({
+          success: verifyResult.success,
+          valid: verifyResult.data?.valid || false,
+          message: verifyResult.data?.message || verifyResult.error?.message
+        }, null, 2));
 
         if (verifyResult.success && verifyResult.data?.valid) {
           addEvent({

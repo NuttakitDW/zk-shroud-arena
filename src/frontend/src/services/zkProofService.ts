@@ -89,13 +89,13 @@ export class ZkProofService {
         }
       }
 
-      // Prepare request payload
+      // Prepare request payload (backend expects lat/lon, not latitude/longitude)
       const payload: ProveRequest = {
-        latitude: validatedCoords.lat,
-        longitude: validatedCoords.lon,
+        lat: validatedCoords.lat,
+        lon: validatedCoords.lon,
         resolution,
         h3_map: h3Map
-      };
+      } as any;
 
       // Execute request with retry logic
       const response = await this.executeWithRetry(
