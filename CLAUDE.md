@@ -22,12 +22,12 @@
    - ❌ NEVER change backend configuration
    - ❌ NEVER run cargo commands
 
-2. **BACKEND IS RUNNING AT localhost:8080**
-   - ✅ Backend server is already running at `http://localhost:8080`
+2. **BACKEND IS RUNNING**
+   - ✅ Backend server is already running
    - ✅ API endpoints available:
-     - `POST http://localhost:8080/prove` - ZK proof generation
-     - `POST http://localhost:8080/verify` - ZK proof verification
-   - ✅ Use these endpoints in frontend code
+     - `POST /api/prove` - ZK proof generation
+     - `POST /api/verify` - ZK proof verification
+   - ✅ Use these endpoints in frontend code via environment configuration
 
 3. **FRONTEND-ONLY WORK AREAS**
    - ✅ Work ONLY in `src/frontend/` directory
@@ -40,7 +40,9 @@
 4. **API INTEGRATION PATTERN**
    ```typescript
    // ✅ CORRECT: Frontend API calls to backend
-   const response = await fetch('http://localhost:8080/prove', {
+   import { env } from '@/config/environment';
+   
+   const response = await fetch(env.getApiUrl(env.API.PROVE), {
      method: 'POST',
      headers: { 'Content-Type': 'application/json' },
      body: JSON.stringify(proofData)

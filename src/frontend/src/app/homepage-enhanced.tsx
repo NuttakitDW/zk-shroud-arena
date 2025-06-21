@@ -116,8 +116,8 @@ export default function EnhancedTronHomepage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Shield className="w-8 h-8 text-cyan-400" />
-              <span className="text-xl font-bold heading-glow" data-text="ZK SHROUD">
-                ZK SHROUD
+              <span className="text-xl font-bold heading-glow" data-text="ZK SHROUD ARENA">
+                ZK SHROUD ARENA
               </span>
             </div>
             
@@ -130,9 +130,9 @@ export default function EnhancedTronHomepage() {
             </div>
             
             <div className="flex items-center gap-4">
-              <button className="btn-tron btn-tron-primary hidden md:block">
+              <a href="/player" className="btn-tron btn-tron-primary hidden md:block">
                 Enter Arena
-              </button>
+              </a>
               
               {/* Mobile Menu Toggle */}
               <button 
@@ -153,9 +153,9 @@ export default function EnhancedTronHomepage() {
               <a href="#gameplay" className="block nav-link-tron">Gameplay</a>
               <a href="#technology" className="block nav-link-tron">Technology</a>
               <a href="/proof-demo" className="block nav-link-tron">Demo</a>
-              <button className="btn-tron btn-tron-primary w-full">
+              <a href="/player" className="btn-tron btn-tron-primary w-full text-center">
                 Enter Arena
-              </button>
+              </a>
             </div>
           </div>
         )}

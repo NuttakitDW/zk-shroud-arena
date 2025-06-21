@@ -28,7 +28,7 @@ export const BackendStatus: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const isProduction = env.BACKEND_URL.includes('34.51.151.9');
+  const isProduction = process.env.NODE_ENV === 'production';
 
   return (
     <div className={`
@@ -39,7 +39,7 @@ export const BackendStatus: React.FC = () => {
         <div className="flex items-center gap-2">
           <Server className="w-4 h-4 text-gray-400" />
           <span className="text-sm font-medium text-gray-300">
-            Backend {isProduction ? 'Production' : 'Local'}
+            Backend Status
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -55,7 +55,7 @@ export const BackendStatus: React.FC = () => {
       
       <div className="space-y-1">
         <div className="text-xs text-gray-500">
-          URL: <span className="font-mono text-gray-400">{env.BACKEND_URL}</span>
+          Environment: <span className="font-mono text-gray-400">{isProduction ? 'Production' : 'Development'}</span>
         </div>
         <div className="text-xs text-gray-500">
           Status: <span className={isConnected ? 'text-green-400' : 'text-red-400'}>
@@ -76,9 +76,7 @@ export const BackendStatus: React.FC = () => {
             <div className="text-xs text-red-400">
               <p className="font-semibold">Connection Failed</p>
               <p className="mt-1">
-                {isProduction 
-                  ? 'Unable to connect to production backend. The server might be down or unreachable.'
-                  : 'Unable to connect to local backend. Make sure the backend server is running on port 8080.'}
+                Unable to connect to backend server. The server might be down or unreachable.
               </p>
             </div>
           </div>
