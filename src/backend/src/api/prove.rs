@@ -1,3 +1,6 @@
+//! POST /prove – create a Groth16 proof that the user’s point is inside an
+//! authorised H3 cell.
+
 use actix_web::{HttpResponse, Responder, error::ErrorBadRequest, post, web};
 
 use ark_bn254::{Bn254, Fr};
@@ -8,7 +11,6 @@ use ark_std::{
     One, Zero,
     rand::{SeedableRng, rngs::StdRng},
 };
-
 use base64::{Engine as _, engine::general_purpose::STANDARD as B64};
 use h3o::{CellIndex, Resolution};
 use serde::Deserialize;
@@ -18,8 +20,8 @@ use crate::{
     state::AppState,
     zk::{
         circuit::{
-            CIRCUIT_MAX_POLYGON_HASHES as MAX_HASHES, CIRCUIT_MAX_VERTICES as MAX_VERTS,
-            CIRCUIT_PRECISION as PREC, PointInMapCircuit, hash_polygon, is_point_in_polygon,
+            CIRCUIT_MAX_POLYGON_HASHES, CIRCUIT_MAX_VERTICES, CIRCUIT_PRECISION, PointInMapCircuit,
+            hash_polygon, is_point_in_polygon,
         },
         point_2d::Point2DDec,
     },
@@ -36,16 +38,16 @@ fn gps_to_web_mercator(lon_deg: f64, lat_deg: f64) -> (f64, f64) {
 }
 
 /// Build an H3 cell boundary padded to `MAX_VERTS`.
-fn current_h3_polygon(
+fn current_h3_polygon<const MAX: usize, const PREC: u32>(
     lon: f64,
     lat: f64,
     res: Resolution,
-) -> ([Point2DDec<Fr, PREC>; MAX_VERTS], usize) {
+) -> ([Point2DDec<Fr, PREC>; MAX], usize) {
     let cell = h3o::LatLng::new(lat, lon).unwrap().to_cell(res);
     let boundary = cell.boundary();
-    let n = boundary.len().min(MAX_VERTS);
+    let n = boundary.len().min(MAX);
 
-    let mut poly = [Point2DDec::<Fr, PREC>::from_f64(0.0, 0.0); MAX_VERTS];
+    let mut poly = [Point2DDec::<Fr, PREC>::from_f64(0.0, 0.0); MAX];
     for (i, ll) in boundary.into_iter().take(n).enumerate() {
         let (x, y) = gps_to_web_mercator(ll.lng(), ll.lat());
         poly[i] = Point2DDec::from_f64(x, y);
@@ -53,30 +55,40 @@ fn current_h3_polygon(
     (poly, n)
 }
 
-fn hash_cell_boundary(
-    poly: &[Point2DDec<Fr, PREC>; MAX_VERTS],
+/// Hash a cell boundary with Poseidon.
+fn hash_cell_boundary<const MAX: usize, const PREC: u32>(
+    poly: &[Point2DDec<Fr, PREC>; MAX],
     n: usize,
     cfg: &PoseidonConfig<Fr>,
 ) -> Fr {
-    hash_polygon::<Fr, PREC, MAX_VERTS>(poly, n, cfg)
+    hash_polygon::<Fr, PREC, MAX>(poly, n, cfg)
 }
 
-fn hash_map_cells(h3_cells: &[String], cfg: &PoseidonConfig<Fr>) -> Vec<Fr> {
+/// Hash every H3 cell in the map list.
+fn hash_map_cells<const MAX: usize, const PREC: u32>(
+    h3_cells: &[String],
+    cfg: &PoseidonConfig<Fr>,
+) -> Vec<Fr> {
     h3_cells
         .iter()
         .filter_map(|hex| CellIndex::from_str(hex).ok())
         .map(|cell| {
             let boundary = cell.boundary();
-            let n = boundary.len().min(MAX_VERTS);
-
-            let mut poly = [Point2DDec::<Fr, PREC>::from_f64(0.0, 0.0); MAX_VERTS];
+            let n = boundary.len().min(MAX);
+            let mut poly = [Point2DDec::<Fr, PREC>::from_f64(0.0, 0.0); MAX];
             for (i, ll) in boundary.into_iter().take(n).enumerate() {
                 let (x, y) = gps_to_web_mercator(ll.lng(), ll.lat());
                 poly[i] = Point2DDec::from_f64(x, y);
             }
-            hash_cell_boundary(&poly, n, cfg)
+            hash_cell_boundary::<MAX, PREC>(&poly, n, cfg)
         })
         .collect()
+}
+
+fn to_b64<T: CanonicalSerialize>(p: &T) -> String {
+    let mut buf = Vec::new();
+    p.serialize_uncompressed(&mut buf).unwrap();
+    B64.encode(buf)
 }
 
 // ───────────────────────── request body ─────────────────────
@@ -94,6 +106,11 @@ pub async fn prove(
     body: web::Json<ProveRequest>,
     app_state: web::Data<Arc<AppState>>,
 ) -> Result<impl Responder, actix_web::Error> {
+    type F = Fr;
+    const PREC: u32 = CIRCUIT_PRECISION;
+    const MAX_VERTS: usize = CIRCUIT_MAX_VERTICES;
+    const MAX_HASHES: usize = CIRCUIT_MAX_POLYGON_HASHES;
+
     let cfg = &app_state.poseidon_config;
     let pk = &app_state.pk;
 
@@ -102,25 +119,26 @@ pub async fn prove(
         Resolution::try_from(body.resolution).map_err(|_| ErrorBadRequest("invalid resolution"))?;
 
     /* 1. current cell polygon + hash ------------------------------ */
-    let (poly, n) = current_h3_polygon(body.lon, body.lat, res);
-    let cell_hash = hash_cell_boundary(&poly, n, cfg);
+    let (poly, n) = current_h3_polygon::<MAX_VERTS, PREC>(body.lon, body.lat, res);
+    let cell_hash = hash_cell_boundary::<MAX_VERTS, PREC>(&poly, n, cfg);
 
     /* 2. map hashes ------------------------------------------------ */
-    let map_hashes = hash_map_cells(&body.h3_map, cfg);
+    let map_hashes = hash_map_cells::<MAX_VERTS, PREC>(&body.h3_map, cfg);
 
     /* 3. native checks -------------------------------------------- */
     let (x, y) = gps_to_web_mercator(body.lon, body.lat);
     let inside_poly =
-        is_point_in_polygon::<Fr, PREC, MAX_VERTS>(&Point2DDec::from_f64(x, y), &poly, n);
+        is_point_in_polygon::<F, PREC, MAX_VERTS>(&Point2DDec::from_f64(x, y), &poly, n);
     let hash_match = map_hashes.iter().any(|h| h == &cell_hash);
     let final_flag = inside_poly && hash_match;
 
     /* 4. build circuit ------------------------------------------- */
-    let mut pub_hash_arr = [Fr::zero(); MAX_HASHES];
+    let mut pub_hash_arr = [F::zero(); MAX_HASHES];
     for (i, h) in map_hashes.iter().take(MAX_HASHES).enumerate() {
         pub_hash_arr[i] = *h;
     }
-    let circuit = PointInMapCircuit::<Fr, PREC, MAX_VERTS, MAX_HASHES>::new(
+
+    let circuit = PointInMapCircuit::<F, PREC, MAX_VERTS, MAX_HASHES>::new(
         Point2DDec::from_f64(x, y),
         poly,
         n as u64,
@@ -142,33 +160,28 @@ pub async fn prove(
     };
 
     /* 6. public inputs ------------------------------------------- */
-    let mut public_inputs = Vec::<Fr>::new();
-    public_inputs.push(if final_flag { Fr::one() } else { Fr::zero() });
+    let mut public_inputs = Vec::<F>::new();
+    public_inputs.push(if final_flag { F::one() } else { F::zero() });
     public_inputs.extend_from_slice(&pub_hash_arr);
 
     /* 7. serialise (uncompressed) → base-64 ----------------------- */
-    let proof_b64 = {
-        let mut buf = Vec::new();
-        proof.serialize_uncompressed(&mut buf).unwrap();
-        B64.encode(buf)
-    };
-    let publics_b64: Vec<String> = public_inputs
-        .iter()
-        .map(|f| {
-            let mut v = Vec::new();
-            f.serialize_uncompressed(&mut v).unwrap();
-            B64.encode(v)
-        })
-        .collect();
+    let proof_json = serde_json::json!({
+        "a": to_b64(&proof.a),
+        "b": to_b64(&proof.b),
+        "c": to_b64(&proof.c),
+    });
+
+    let publics_b64: Vec<String> = public_inputs.iter().map(to_b64).collect();
 
     /* 8. success JSON -------------------------------------------- */
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "ok": true,
+
         // "inside_polygon": inside_poly,
         // "hash_found_in_map": hash_match,
         // "in_map_final": final_flag,
 
-        "proof": { "data": proof_b64 },
+        "proof": proof_json,
         "public_inputs": publics_b64
     })))
 }
