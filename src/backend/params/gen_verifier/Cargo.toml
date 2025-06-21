@@ -1,0 +1,21 @@
+[package]
+name    = "gen_verifier"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# ─── Ark-works stack ─────────────────────────────────────────────
+ark-ff       = "0.3"
+ark-ec       = "0.3"
+ark-serialize = "0.3"
+ark-bn254    = { version = "0.3", features = ["curve"] }
+ark-groth16  = "0.3"
+
+# The Solidity-verifier generator (lives in a sub-crate)
+arkworks-solidity-verifier = { git = "https://github.com/Tetration-Lab/arkworks-solidity-verifier", rev = "4c66c4a" }
+
+# ─── CLI / JSON / error handling ────────────────────────────────
+clap        = { version = "4", features = ["derive"] }
+serde       = { version = "1", features = ["derive"] }
+serde_json  = "1"
+anyhow      = "1.0"
