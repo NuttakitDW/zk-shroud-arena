@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Shield, MapPin, Info, Sparkles } from 'lucide-react';
+import { Shield, MapPin, Info, Sparkles, Hexagon, Terminal } from 'lucide-react';
 import { H3Zone } from '../../components/Map/types';
 
 // Dynamic imports for map components
-const PlayerMap = dynamic(
-  () => import('../../components/Map/PlayerMap').then(m => m.PlayerMap),
+const SimpleH3Map = dynamic(
+  () => import('../../components/Map/SimpleH3Map').then(m => m.SimpleH3Map),
   { 
     ssr: false,
     loading: () => (
@@ -23,51 +23,40 @@ const LiveProofLogger = dynamic(
   { ssr: false }
 );
 
-const SimpleZoneProximity = dynamic(
-  () => import('../../components/Location/SimpleZoneProximity').then(m => m.SimpleZoneProximity),
+const BackendStatus = dynamic(
+  () => import('../../components/BackendStatus').then(m => m.BackendStatus),
   { ssr: false }
 );
 
-// Demo zones
-const demoZones: H3Zone[] = [
-  {
-    id: 'demo-zone-1',
-    h3Index: '8c2a100d2cb25ff',
-    type: 'safe',
-    name: 'Demo Zone Alpha',
-    pointValue: 10,
-    center: { latitude: 13.7563, longitude: 100.5018 }
-  },
-  {
-    id: 'demo-zone-2', 
-    h3Index: '8c2a100d2cb27ff',
-    type: 'safe',
-    name: 'Demo Zone Beta',
-    pointValue: 15,
-    center: { latitude: 13.7573, longitude: 100.5028 }
-  },
-  {
-    id: 'demo-zone-3',
-    h3Index: '8c2a100d2cb29ff',
-    type: 'safe',
-    name: 'Demo Zone Gamma',
-    pointValue: 20,
-    center: { latitude: 13.7553, longitude: 100.5008 }
-  }
-];
-
-export default function ProofDemoPage() {
-  const [locationEnabled, setLocationEnabled] = useState(false);
+export default function ProofDemoAdvancedPage() {
+  const [zones, setZones] = useState<H3Zone[]>([]);
   const [playerLocation, setPlayerLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [currentZone, setCurrentZone] = useState<H3Zone | null>(null);
 
-  // Auto-enable location for demo
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLocationEnabled(true);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+  // Check if player is in any zone
+  const checkPlayerInZone = (lat: number, lng: number) => {
+    if (zones.length === 0) return;
+    
+    // Check each zone
+    for (const zone of zones) {
+      try {
+        const playerH3 = h3.latLngToCell(lat, lng, h3.getResolution(zone.h3Index));
+        if (playerH3 === zone.h3Index) {
+          setCurrentZone(zone);
+          return;
+        }
+      } catch (e) {
+        // Ignore H3 errors
+      }
+    }
+    setCurrentZone(null);
+  };
+
+  // Update player location and check zones
+  const handleLocationUpdate = (lat: number, lng: number) => {
+    setPlayerLocation({ latitude: lat, longitude: lng });
+    checkPlayerInZone(lat, lng);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -79,138 +68,145 @@ export default function ProofDemoPage() {
               <Shield className="w-8 h-8 text-cyan-400" />
               <div>
                 <h1 className="text-2xl font-bold text-white">
-                  Zero-Knowledge Location Proof Demo
+                  Advanced ZK Proof Demo
                 </h1>
                 <p className="text-sm text-gray-400">
-                  Privacy-preserving location verification using ZK proofs
+                  Draw H3 zones and generate real ZK proofs with backend API
                 </p>
               </div>
             </div>
-            <a
-              href="/"
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
-            >
-              Back to Home
-            </a>
+            <div className="flex items-center gap-4">
+              <a
+                href="/proof-demo"
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
+              >
+                Simple Demo
+              </a>
+              <a
+                href="/"
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+              >
+                Back to Home
+              </a>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Map and Info */}
-          <div className="space-y-6">
-            {/* Info Card */}
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-6 border border-gray-700">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Map */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Instructions */}
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
               <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-white">How it works</h3>
-                  <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
-                    <li>Enable location permission when prompted</li>
-                    <li>Move your location marker into a green demo zone</li>
-                    <li>Watch as ZK proofs are automatically generated</li>
-                    <li>The proof validates your zone presence without revealing GPS coordinates</li>
+                <Hexagon className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-2 flex-1">
+                  <h3 className="font-semibold text-white">Draw Your Own H3 Zones</h3>
+                  <ol className="text-sm text-gray-300 space-y-1 list-decimal list-inside">
+                    <li>Select a hexagon size (resolution)</li>
+                    <li>Click on the map to create H3 zones</li>
+                    <li>Enable location to track your position</li>
+                    <li>Enter a zone to generate real ZK proofs</li>
                   </ol>
-                  <div className="mt-4 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded">
-                    <p className="text-sm text-cyan-400">
-                      <Sparkles className="w-4 h-4 inline mr-1" />
-                      ZK proofs ensure location privacy while preventing spoofing
-                    </p>
-                  </div>
-                  
-                  <div className="mt-4 space-y-2">
-                    <h4 className="font-semibold text-white">What the proof contains:</h4>
-                    <ul className="text-sm text-gray-300 space-y-1 list-disc list-inside">
-                      <li>Proof hash (cryptographic proof of zone presence)</li>
-                      <li>H3 zone index (which zone you're in)</li>
-                      <li>Timestamp (when the proof was generated)</li>
-                      <li>NOT your GPS coordinates!</li>
-                    </ul>
-                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <Terminal className="w-4 h-4" />
+                  Open DevTools Console for API logs
                 </div>
               </div>
             </div>
 
-            {/* Map */}
+            {/* Map with H3 Drawing */}
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
               <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                Interactive Map
+                Interactive H3 Map - Draw Your Zones
               </h3>
-              <div className="h-[400px] rounded-lg overflow-hidden border border-gray-700">
-                <PlayerMap
-                  existingZones={demoZones}
-                  locationEnabled={locationEnabled}
-                  onLocationUpdate={(lat, lng) => setPlayerLocation({ latitude: lat, longitude: lng })}
+              <div className="h-[600px] rounded-lg overflow-hidden border border-gray-700">
+                <SimpleH3Map
+                  onZonesChange={setZones}
+                  existingZones={zones}
+                  onLocationUpdate={handleLocationUpdate}
+                  locationEnabled={true}
                   defaultCenter={[13.7563, 100.5018]}
                   defaultZoom={17}
                 />
               </div>
               
-              {/* Location Controls */}
-              <div className="mt-4 flex items-center justify-between">
-                <button
-                  onClick={() => setLocationEnabled(!locationEnabled)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    locationEnabled
-                      ? 'bg-red-600 hover:bg-red-700 text-white'
-                      : 'bg-green-600 hover:bg-green-700 text-white'
-                  }`}
-                >
-                  {locationEnabled ? 'Disable' : 'Enable'} Location
-                </button>
-                
+              {/* Zone Stats */}
+              <div className="mt-4 flex items-center justify-between text-sm">
+                <div className="text-gray-400">
+                  Zones created: <span className="text-white font-semibold">{zones.length}</span>
+                </div>
                 {playerLocation && (
-                  <span className="text-xs text-gray-400 font-mono">
-                    {playerLocation.latitude.toFixed(6)}, {playerLocation.longitude.toFixed(6)}
-                  </span>
+                  <div className="text-gray-400 font-mono text-xs">
+                    Player: {playerLocation.latitude.toFixed(6)}, {playerLocation.longitude.toFixed(6)}
+                  </div>
                 )}
               </div>
             </div>
-
-            {/* Zone Proximity */}
-            <SimpleZoneProximity
-              nearbyZones={demoZones}
-              onZoneEnter={setCurrentZone}
-              onZoneExit={() => setCurrentZone(null)}
-            />
           </div>
 
-          {/* Right Column - Proof Logger */}
-          <div className="lg:sticky lg:top-4">
+          {/* Right Column - Proof Logger & Status */}
+          <div className="space-y-4">
+            {/* Backend Status */}
+            <BackendStatus />
+
+            {/* Current Zone Status */}
+            {currentZone && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-5 h-5 text-green-400" />
+                  <h4 className="font-semibold text-green-400">In Zone!</h4>
+                </div>
+                <p className="text-sm text-gray-300">
+                  {currentZone.name} ({currentZone.h3Index})
+                </p>
+              </div>
+            )}
+
+            {/* Proof Logger */}
             <LiveProofLogger
               playerLocation={playerLocation || undefined}
               currentZone={currentZone}
-              className="h-[700px]"
+              className="h-[600px]"
             />
+
+            {/* API Info */}
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
+              <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                <Info className="w-4 h-4" />
+                API Endpoints Used
+              </h4>
+              <div className="space-y-2 text-xs font-mono">
+                <div className="text-gray-400">
+                  POST {env.BACKEND_URL}/prove
+                </div>
+                <div className="text-gray-400">
+                  POST {env.BACKEND_URL}/verify
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-3">
+                Check browser console for detailed API request/response logs
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Technical Details */}
-        <div className="mt-8 bg-gray-800/50 backdrop-blur-sm rounded-lg p-6 border border-gray-700">
-          <h3 className="text-lg font-bold text-white mb-4">Technical Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-            <div>
-              <h4 className="font-semibold text-cyan-400 mb-2">Zero-Knowledge Proofs</h4>
-              <p className="text-gray-300">
-                Cryptographic proofs that validate location presence without revealing exact coordinates.
-                Uses zk-SNARKs for efficient verification.
+        {/* Console Log Helper */}
+        <div className="mt-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <Terminal className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+            <div className="text-sm">
+              <p className="font-semibold text-yellow-400 mb-1">
+                Open Browser Console to See API Calls
               </p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-purple-400 mb-2">H3 Geospatial Index</h4>
               <p className="text-gray-300">
-                Hexagonal hierarchical spatial index by Uber. Provides discrete location cells 
-                for privacy-preserving zone validation.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-green-400 mb-2">Privacy Guarantees</h4>
-              <p className="text-gray-300">
-                Exact GPS coordinates never leave the device. Only proof of presence in a zone 
-                is shared, protecting user privacy.
+                Press <kbd className="px-2 py-1 bg-gray-700 rounded text-xs">F12</kbd> or 
+                <kbd className="px-2 py-1 bg-gray-700 rounded text-xs ml-1">Cmd+Option+I</kbd> to open DevTools.
+                Look for logs marked with 🚀 (requests) and ✅ (responses).
               </p>
             </div>
           </div>
@@ -219,3 +215,7 @@ export default function ProofDemoPage() {
     </div>
   );
 }
+
+// Import h3 for zone checking
+import * as h3 from 'h3-js';
+import { env } from '../../config/environment';
