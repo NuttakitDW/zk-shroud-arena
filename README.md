@@ -70,11 +70,11 @@ We have measured the performance of the circuit on two platforms: my MacBook M1 
 | **GCP c4-highcpu-8** <br>Berlin → Stockholm | Prove     | **440 ms** (+60 RTT) |
 |                                             | Verify    |  **90 ms** (+60 RTT) |
 
-## What This Circuit Solves
+## What This Solves
 
-As of now, the authors are not aware of any proof-of-location project that accepts a list of multiple convex polygons as public input; existing projects handle only a single, trivial shape such as a circle, square, or (at most) a heptagon. Our circuit supports any convex polygon, with a configurable `CIRCUIT_MAX_VERTICES` (currently 6). It also accepts a polygon list of up to 1 024 entries, which is sufficient for most complex maps representing regions or entire countries, and this limit can be raised via `CIRCUIT_MAX_POLYGON_HASHES` (currently 1 024). Increasing either parameter adds only minimal constraints. The circuit is written in Rust, providing better compatibility with the ZK ecosystem, and is free for anyone to use.
+As of now, the authors are not aware of any proof-of-location project that accepts a list of multiple convex polygons as public input; existing projects handle only a single, trivial shape such as a circle, square, or (at most) a heptagon. Our circuit supports any convex polygon, with a configurable `CIRCUIT_MAX_VERTICES` (currently 6). It also accepts a polygon list of up to 1 024 entries, which is sufficient for many complex maps representing regions or entire countries, and this limit can be raised via `CIRCUIT_MAX_POLYGON_HASHES` if more is needed. Increasing either parameter adds only minimal constraints. The circuit is written in Rust, providing compatibility with the ZK ecosystem, and is MIT-licensed, so it's free for anyone to use.
 
-For example, [zk-Location](https://github.com/tumberger/zk-Location/tree/main) is a proof-of-location project written in gnark. It is more novel, faster, and more efficient than our approach, but it is implemented in Go (which can limit compatibility) and accepts only a single H3 cell.
+![Berlin Map](images/berlin-h3-cells.png)
 
 ## Setup
 
@@ -200,4 +200,4 @@ cargo run --release
 
 ## Acknowledgement
 
-The idea of using H3 cells to represent complex areas came from the paper [_Zero-Knowledge Location Privacy via Accurate Floating-Point SNARKs_]([https://eprint.iacr.org/2024/1842.pdf](https://eprint.iacr.org/2024/1842.pdf)) and its [reference implementation](https://github.com/tumberger/zk-Location/tree/main). We were not familiar with the H3 grid system until we discovered this work. Our implementation, however, is entirely different from theirs, which is written in Rust rather than Go, avoids floating-point arithmetic because of its complexity, and does not derive an H3 cell from latitude and longitude with the “trigonometry black magic” used in the paper. Instead, we verify location by checking whether a point lies inside a convex polygon using only subtractions and multiplications.
+The idea of using H3 cells to represent complex areas came from the paper [_Zero-Knowledge Location Privacy via Accurate Floating-Point SNARKs_](<[https://eprint.iacr.org/2024/1842.pdf](https://eprint.iacr.org/2024/1842.pdf)>) and its [reference implementation](https://github.com/tumberger/zk-Location/tree/main). We were not familiar with the H3 grid system until we discovered this work. Our implementation, however, is entirely different from theirs, which is written in Rust rather than Go, avoids floating-point arithmetic because of its complexity, and does not derive an H3 cell from latitude and longitude with the “trigonometry black magic” used in the paper. Instead, we verify location by checking whether a point lies inside a convex polygon using only subtractions and multiplications.
