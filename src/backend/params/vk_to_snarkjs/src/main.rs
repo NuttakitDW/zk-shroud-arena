@@ -52,7 +52,7 @@ struct VKeyJs {
     vk_delta_2: [[String; 2]; 2],
 
     /// first 3 coeffs of α·β pairing in Fq12
-    vk_alphabeta_12: [[String; 2]; 3],
+    vk_alphabeta_12: [[[String; 2]; 2]; 3],
 
     ic: Vec<[String; 2]>,
 }
@@ -73,9 +73,12 @@ fn main() -> anyhow::Result<()> {
 
     // coeffs are (c0.c0, c0.c1, c0.c2) – each is Fq2
     let ab_coeffs = [
-        fq2_to_arr(&alphabeta.c0.c0),
-        fq2_to_arr(&alphabeta.c0.c1),
-        fq2_to_arr(&alphabeta.c0.c2),
+        [
+            fq2_to_arr(&alphabeta.c0.c0), // X-imag / X-real
+            fq2_to_arr(&alphabeta.c1.c0), // Y-imag / Y-real
+        ],
+        [fq2_to_arr(&alphabeta.c0.c1), fq2_to_arr(&alphabeta.c1.c1)],
+        [fq2_to_arr(&alphabeta.c0.c2), fq2_to_arr(&alphabeta.c1.c2)],
     ];
 
     /* 3. build snarkjs object ------------------------------------------ */
