@@ -12,28 +12,28 @@ interface SimpleH3ControlsProps {
 const H3_SIZES = [
   { 
     name: 'Precise', 
-    resolution: 10, 
-    size: '~2m across',
+    resolution: 13,  // ~7.9m diameter, closest to 10m requirement
+    size: '~10m across',
     icon: MapPin,
-    description: 'Very small hexagons'
+    description: 'Precise location tracking'
   },
   { 
     name: 'Building', 
-    resolution: 9, 
+    resolution: 11,  // Actually ~25m - perfect match!
     size: '~25m across',
     icon: Building,
-    description: 'Building-sized hexagons'
+    description: 'Building-sized area'
   },
   { 
     name: 'Area', 
-    resolution: 8, 
+    resolution: 10,  // Actually ~66m, closest to 100m
     size: '~100m across',
     icon: Map,
     description: 'Medium area coverage'
   },
   { 
     name: 'Neighborhood', 
-    resolution: 7, 
+    resolution: 8,   // Actually ~461m, closest to 350m
     size: '~350m across',
     icon: Users,
     description: 'Large area coverage'
