@@ -32,6 +32,7 @@ export default function ProofDemoAdvancedPage() {
   const [zones, setZones] = useState<H3Zone[]>([]);
   const [playerLocation, setPlayerLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [currentZone, setCurrentZone] = useState<H3Zone | null>(null);
+  const [lastProof, setLastProof] = useState<any>(null);
 
   // Check if player is in any zone
   const checkPlayerInZone = (lat: number, lng: number) => {
@@ -68,27 +69,19 @@ export default function ProofDemoAdvancedPage() {
               <Shield className="w-8 h-8 text-cyan-400" />
               <div>
                 <h1 className="text-2xl font-bold text-white">
-                  Advanced ZK Proof Demo
+                  ZK Proof Demo
                 </h1>
                 <p className="text-sm text-gray-400">
                   Draw H3 zones and generate real ZK proofs with backend API
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <a
-                href="/proof-demo"
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
-              >
-                Simple Demo
-              </a>
-              <a
-                href="/"
-                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
-              >
-                Back to Home
-              </a>
-            </div>
+            <a
+              href="/"
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+            >
+              Back to Home
+            </a>
           </div>
         </div>
       </header>
@@ -171,8 +164,40 @@ export default function ProofDemoAdvancedPage() {
             <LiveProofLogger
               playerLocation={playerLocation || undefined}
               currentZone={currentZone}
-              className="h-[600px]"
+              className="h-[400px]"
+              onProofGenerated={(proof) => setLastProof(proof)}
             />
+
+            {/* Last Generated Proof Display */}
+            {lastProof && (
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
+                <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-green-400" />
+                  Last Generated Proof
+                </h4>
+                <div className="bg-black/50 rounded p-3 overflow-x-auto">
+                  <pre className="text-xs font-mono text-green-400">
+{JSON.stringify({
+  proof: lastProof.proof,
+  public_inputs: lastProof.public_inputs,
+  metadata: lastProof.metadata || {
+    generated_at: new Date().toISOString(),
+    zone: currentZone?.name || 'Unknown',
+    h3_resolution: 13
+  }
+}, null, 2)}
+                  </pre>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(JSON.stringify(lastProof, null, 2));
+                  }}
+                  className="mt-2 px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm transition-colors"
+                >
+                  Copy Proof
+                </button>
+              </div>
+            )}
 
             {/* API Info */}
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
