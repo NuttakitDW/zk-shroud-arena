@@ -50,6 +50,7 @@ export const H3Layer: React.FC<H3LayerProps> = ({
   const drawnLayerGroupRef = React.useRef<L.LayerGroup | null>(null);
   const [isDrawingPath, setIsDrawingPath] = React.useState(false);
   const [pathStart, setPathStart] = React.useState<string | null>(null);
+  const [pathResolution, setPathResolution] = React.useState<number | null>(null);
 
   // Initialize layer groups
   useEffect(() => {
@@ -188,15 +189,31 @@ export const H3Layer: React.FC<H3LayerProps> = ({
       } else if (drawingState.drawMode === 'path') {
         // Path drawing mode
         if (!isDrawingPath || !pathStart) {
+          // Start new path - store the resolution
           setIsDrawingPath(true);
           setPathStart(clickedH3);
+          setPathResolution(currentRes);
           onDrawnIndicesChange([...currentDrawnIndices, clickedH3]);
         } else {
-          // Draw path from start to clicked hex
-          const pathIndices = h3.gridPathCells(pathStart, clickedH3);
-          const newIndices = [...new Set([...currentDrawnIndices, ...pathIndices])];
-          onDrawnIndicesChange(newIndices);
-          setPathStart(clickedH3);
+          // Continue path - use stored resolution to ensure compatibility
+          const safeRes = pathResolution || currentRes;
+          // Re-encode both cells at the same resolution to ensure compatibility
+          const startCell = h3.cellToLatLng(pathStart);
+          const endCell = h3.cellToLatLng(clickedH3);
+          const startH3 = h3.latLngToCell(startCell[0], startCell[1], safeRes);
+          const endH3 = h3.latLngToCell(endCell[0], endCell[1], safeRes);
+          
+          try {
+            const pathIndices = h3.gridPathCells(startH3, endH3);
+            const newIndices = [...new Set([...currentDrawnIndices, ...pathIndices])];
+            onDrawnIndicesChange(newIndices);
+            setPathStart(endH3); // Use the re-encoded cell
+          } catch (error) {
+            // If path creation fails, just add the clicked cell
+            console.warn('Failed to create path between cells:', error);
+            onDrawnIndicesChange([...currentDrawnIndices, endH3]);
+            setPathStart(endH3);
+          }
         }
       }
     },
@@ -258,12 +275,22 @@ export const H3Layer: React.FC<H3LayerProps> = ({
       if (e.key === 'Escape' && isDrawingPath) {
         setIsDrawingPath(false);
         setPathStart(null);
+        setPathResolution(null);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isDrawingPath]);
+
+  // Reset path state when drawing stops or mode changes
+  useEffect(() => {
+    if (!drawingState.isDrawing || drawingState.drawMode !== 'path') {
+      setIsDrawingPath(false);
+      setPathStart(null);
+      setPathResolution(null);
+    }
+  }, [drawingState.isDrawing, drawingState.drawMode]);
 
   return null; // This component only manages map layers
 };

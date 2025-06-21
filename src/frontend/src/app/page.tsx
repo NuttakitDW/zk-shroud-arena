@@ -14,7 +14,7 @@ import {
 import { GameContextProvider } from '../contexts/GameContext';
 import { GamePhase, ZKProofStatus } from '../types/gameState';
 import { LocationCoordinates } from '../types/zkProof';
-import { MapPin, Map, Globe } from 'lucide-react';
+import { MapPin, Map, Globe, UserCheck, Users } from 'lucide-react';
 
 // Dynamic import for RealWorldArena to prevent SSR issues with Leaflet
 const RealWorldArena = dynamic(
@@ -47,6 +47,7 @@ export default function ZKShroudArena() {
     status: 'active',
     isCurrentPlayer: true,
   });
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
 
   // Check backend connection
   useEffect(() => {
@@ -124,7 +125,90 @@ export default function ZKShroudArena() {
 
         {/* Game Content */}
         <main className="max-w-7xl mx-auto p-4">
-          {gamePhase === GamePhase.LOBBY && (
+          {gamePhase === GamePhase.LOBBY && !showRoleSelection && (
+            <div className="text-center py-20">
+              <h2 className="text-4xl font-bold mb-6">ZK Zone Control Demo</h2>
+              <p className="text-xl text-gray-400 mb-8">Choose your role to begin</p>
+              
+              {/* Role Selection */}
+              <div className="bg-gray-800 rounded-lg p-6 max-w-4xl mx-auto mb-8">
+                <h3 className="text-xl font-semibold mb-6">Select Your Role</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  {/* Game Manager */}
+                  <a
+                    href="/gm"
+                    className="block p-6 rounded-lg border-2 transition-all border-purple-500 bg-purple-500/10 hover:bg-purple-500/20"
+                  >
+                    <div className="flex items-center justify-center mb-4">
+                      <UserCheck className="w-12 h-12 text-purple-400" />
+                    </div>
+                    <h4 className="text-lg font-semibold mb-2">Game Manager</h4>
+                    <p className="text-sm text-gray-400 mb-4">
+                      Be the puppet master! Create zones anywhere, anytime - no automatic shrinking!
+                    </p>
+                    <div className="text-xs text-left space-y-1 text-gray-300">
+                      <div>• Spawn zones anywhere on the map instantly</div>
+                      <div>• Create dynamic, evolving battlefields</div>
+                      <div>• Design strategic scenarios in real-time</div>
+                    </div>
+                  </a>
+
+                  {/* Player */}
+                  <a
+                    href="/player"
+                    className="block p-6 rounded-lg border-2 transition-all border-cyan-500 bg-cyan-500/10 hover:bg-cyan-500/20"
+                  >
+                    <div className="flex items-center justify-center mb-4">
+                      <Users className="w-12 h-12 text-cyan-400" />
+                    </div>
+                    <h4 className="text-lg font-semibold mb-2">Player</h4>
+                    <p className="text-sm text-gray-400 mb-4">
+                      Survive in an unpredictable battlefield where zones can appear anywhere, anytime!
+                    </p>
+                    <div className="text-xs text-left space-y-1 text-gray-300">
+                      <div>• Adapt to sudden zone changes</div>
+                      <div>• Your exact location stays private</div>
+                      <div>• Strategic movement is key to survival</div>
+                    </div>
+                  </a>
+                </div>
+
+                <div className="bg-gray-900/50 rounded-lg p-4 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <MapPin className="w-5 h-5 text-cyan-400" />
+                    <span className="text-sm font-medium">Demo Mode Instructions</span>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Open two browser tabs: one as Game Manager to draw zones, and another as Player to see them appear in real-time!
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gray-800 rounded-lg p-6 max-w-2xl mx-auto mb-8">
+                <h3 className="text-xl font-semibold mb-4">Revolutionary Features:</h3>
+                <ul className="text-left space-y-2 text-gray-300">
+                  <li>🎮 Human-controlled zones - no predictable shrinking!</li>
+                  <li>🎨 Game Master creates dynamic battlefields in real-time</li>
+                  <li>🔐 Zero-knowledge proofs protect player locations</li>
+                  <li>⚡ Zones can appear/disappear anywhere instantly</li>
+                  <li>🎯 Strategic gameplay with unpredictable challenges</li>
+                </ul>
+              </div>
+              
+              <div className="mt-8">
+                <p className="text-gray-400 mb-4">Or continue to the original game:</p>
+                <button
+                  onClick={() => setShowRoleSelection(true)}
+                  className="bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+                >
+                  Play Classic Battle Royale
+                </button>
+              </div>
+            </div>
+          )}
+
+          {gamePhase === GamePhase.LOBBY && showRoleSelection && (
             <div className="text-center py-20">
               <h2 className="text-4xl font-bold mb-6">Ready to Enter the Arena?</h2>
               
@@ -183,37 +267,19 @@ export default function ZKShroudArena() {
                     </div>
                   </button>
                 </div>
-
-                <div className="bg-gray-900/50 rounded-lg p-4 text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <MapPin className="w-5 h-5 text-cyan-400" />
-                    <span className="text-sm font-medium">Current Selection: {arenaMode === 'virtual' ? 'Virtual Arena' : 'Real World Arena'}</span>
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    {arenaMode === 'virtual' 
-                      ? 'Practice mode with simulated coordinates - no location access needed'
-                      : 'Real GPS mode - your exact location is protected by zero-knowledge cryptography'
-                    }
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-gray-800 rounded-lg p-6 max-w-2xl mx-auto mb-8">
-                <h3 className="text-xl font-semibold mb-4">Game Features:</h3>
-                <ul className="text-left space-y-2 text-gray-300">
-                  <li>🎯 Battle royale with shrinking safe zones</li>
-                  <li>🔐 Zero-knowledge location proofs for privacy</li>
-                  <li>🗺️ {arenaMode === 'virtual' ? 'Interactive virtual map' : 'Real-world GPS mapping'}</li>
-                  <li>⚔️ Stealth gameplay mechanics</li>
-                  <li>🏆 Last player standing wins</li>
-                </ul>
               </div>
               
               <button
                 onClick={handleStartGame}
-                className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-bold py-4 px-8 rounded-lg text-xl transition-all duration-200 transform hover:scale-105"
+                className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-bold py-4 px-8 rounded-lg text-xl transition-all duration-200 transform hover:scale-105 mr-4"
               >
                 Start {arenaMode === 'virtual' ? 'Virtual' : 'Real World'} Game
+              </button>
+              <button
+                onClick={() => setShowRoleSelection(false)}
+                className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-8 rounded-lg text-xl transition-all duration-200"
+              >
+                Back
               </button>
             </div>
           )}

@@ -71,6 +71,7 @@ Thumbs.db
 # Logs
 *.log
 dev.log
+dev-fresh.log
 
 # RustRover
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
