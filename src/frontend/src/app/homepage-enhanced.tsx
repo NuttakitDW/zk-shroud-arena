@@ -162,7 +162,7 @@ export default function EnhancedTronHomepage() {
       </nav>
 
       {/* Hero Section with Enhanced Animations */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center tron-grid pt-20">
+      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center tron-grid pt-32">
         <div 
           className="absolute inset-0 opacity-30"
           style={{
@@ -172,8 +172,52 @@ export default function EnhancedTronHomepage() {
         
         <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
           <div className="space-y-8">
+            {/* ZKHack Berlin Badge */}
+            <div className={`inline-flex items-center justify-center mb-8 relative z-20 ${heroVisible ? 'animate-in' : ''} fade-in-up`}>
+              <div className="relative group">
+                {/* Grid Pattern Background */}
+                <div className="absolute inset-0 -inset-x-8 -inset-y-4 opacity-20">
+                  <div className="absolute inset-0" style={{
+                    backgroundImage: `
+                      linear-gradient(to right, #FF69B4 1px, transparent 1px),
+                      linear-gradient(to bottom, #FF69B4 1px, transparent 1px)
+                    `,
+                    backgroundSize: '20px 20px'
+                  }} />
+                </div>
+                
+                {/* Glow Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-pink-500/20 to-transparent rounded blur-xl" />
+                
+                {/* Main Badge */}
+                <div className="relative border border-pink-500/30 rounded px-8 py-3 backdrop-blur-sm bg-black/80 group-hover:border-pink-500/50 transition-all duration-300">
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="text-xs tracking-wider text-gray-400 mb-1">POWERED BY</div>
+                    <div className="flex items-center gap-2 font-bold">
+                      <span className="text-2xl font-orbitron" style={{ 
+                        letterSpacing: '0.15em',
+                        color: 'transparent',
+                        WebkitTextStroke: '1px #00D9FF',
+                        textShadow: '0 0 20px rgba(0, 217, 255, 0.5)'
+                      }}>ZK</span>
+                      <span className="text-2xl font-orbitron" style={{ 
+                        letterSpacing: '0.15em',
+                        color: 'transparent',
+                        WebkitTextStroke: '1px #00D9FF',
+                        textShadow: '0 0 20px rgba(0, 217, 255, 0.5)'
+                      }}>HACK</span>
+                      <span className="text-2xl font-orbitron text-pink-400" style={{ 
+                        letterSpacing: '0.15em',
+                        textShadow: '0 0 20px rgba(255, 105, 180, 0.8)'
+                      }}>BERLIN</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Animated Title */}
-            <h1 className={`heading-hero mb-4 ${heroVisible ? 'animate-in' : ''} fade-in-up`}>
+            <h1 className={`heading-hero mb-4 ${heroVisible ? 'animate-in' : ''} fade-in-up stagger-1`}>
               <span className="block">ENTER THE</span>
               <span className="block glitch-text">ZERO KNOWLEDGE</span>
               <span className="block">BATTLEGROUND</span>
@@ -181,7 +225,7 @@ export default function EnhancedTronHomepage() {
             
             <p className={`text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto mb-12 ${
               heroVisible ? 'animate-in' : ''
-            } fade-in-up stagger-1`}>
+            } fade-in-up stagger-2`}>
               A revolutionary battle royale where your location is protected by 
               <span className="text-cyan-400 font-semibold"> cryptographic proofs</span> and 
               zones are controlled by <span className="text-orange-500 font-semibold">human game masters</span>
@@ -190,7 +234,7 @@ export default function EnhancedTronHomepage() {
             {/* CTA Buttons with Stagger */}
             <div className={`flex flex-col sm:flex-row gap-4 justify-center ${
               heroVisible ? 'animate-in' : ''
-            } fade-in-up stagger-2`}>
+            } fade-in-up stagger-3`}>
               <a href="/gm" className="btn-tron btn-tron-primary group float-animation">
                 <span className="flex items-center gap-2">
                   <Gamepad2 className="w-5 h-5" />
@@ -211,15 +255,15 @@ export default function EnhancedTronHomepage() {
             <div className={`mt-16 flex flex-wrap justify-center gap-4 md:gap-8 ${
               heroVisible ? 'animate-in' : ''
             }`}>
-              <div className="glass-panel px-6 py-3 scale-in stagger-3">
+              <div className="glass-panel px-6 py-3 scale-in stagger-4">
                 <div className="text-cyan-400 text-sm">Players Online</div>
                 <div className="text-2xl font-bold">1,337</div>
               </div>
-              <div className="glass-panel px-6 py-3 scale-in stagger-4">
+              <div className="glass-panel px-6 py-3 scale-in stagger-5">
                 <div className="text-orange-500 text-sm">Active Zones</div>
                 <div className="text-2xl font-bold">42</div>
               </div>
-              <div className="glass-panel px-6 py-3 scale-in stagger-5">
+              <div className="glass-panel px-6 py-3 scale-in stagger-6">
                 <div className="text-green-400 text-sm">Proofs Generated</div>
                 <div className="text-2xl font-bold">10.2K</div>
               </div>
@@ -252,7 +296,7 @@ export default function EnhancedTronHomepage() {
         {/* Scroll Indicator */}
         <div className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 transition-opacity duration-500 ${
           scrollY > 50 ? 'opacity-0 pointer-events-none' : 'opacity-100'
-        } ${heroVisible ? 'animate-in' : ''} fade-in-up stagger-6`}>
+        }`}>
           <a href="#features" className="group">
             <div className="text-center text-gray-400 text-sm mb-2 group-hover:text-cyan-400 transition-colors">
               Scroll Down
@@ -404,12 +448,12 @@ export default function EnhancedTronHomepage() {
                 </div>
                 
                 <div className="mt-6 flex gap-4">
-                  <button className="btn-tron btn-tron-secondary flex-1">
+                  <a href="/gm" className="btn-tron btn-tron-secondary flex-1">
                     Try as GM
-                  </button>
-                  <button className="btn-tron btn-tron-primary flex-1">
+                  </a>
+                  <a href="/player" className="btn-tron btn-tron-primary flex-1">
                     Try as Player
-                  </button>
+                  </a>
                 </div>
               </div>
             </div>
@@ -606,7 +650,7 @@ export default function EnhancedTronHomepage() {
             <span className="font-bold">ZK SHROUD ARENA</span>
           </div>
           <p className="text-gray-400 text-sm">
-            Built for ZKHack 2025 • Powered by Zero-Knowledge Cryptography
+            Built for <span className="text-pink-400">ZKHack Berlin 2025</span> • Powered by Zero-Knowledge Cryptography
           </p>
         </div>
       </footer>
