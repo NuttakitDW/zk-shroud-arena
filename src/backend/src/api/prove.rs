@@ -1,12 +1,7 @@
-//! POST /prove – create a Groth16 proof that the user’s point is inside an
-//! authorised H3 cell.
-
 use actix_web::{HttpResponse, Responder, error::ErrorBadRequest, post, web};
 use ark_bn254::{Bn254, Fr};
 use ark_crypto_primitives::{snark::SNARK, sponge::poseidon::PoseidonConfig};
 use ark_groth16::Groth16;
-use ark_relations::r1cs::ConstraintSynthesizer;
-use ark_relations::r1cs::ConstraintSystem; // --- debug
 use ark_serialize::CanonicalSerialize;
 use ark_std::{
     One, Zero,
@@ -140,7 +135,7 @@ pub async fn prove(
     }
 
     // we need `poly` and `pub_hash_arr` twice, so keep copies
-    let poly_copy = poly; // Copy types, cheap
+    // let poly_copy = poly; // Copy types, cheap
     let pub_hash_copy = pub_hash_arr;
 
     // --- debug: count constraints ---------------------------------
