@@ -68,6 +68,7 @@ async fn main() -> std::io::Result<()> {
     println!("Starting server at 8080");
     HttpServer::new(move || {
         App::new()
+            .app_data(shared.clone())
             .wrap(
                 DefaultHeaders::new()
                     .add(("Access-Control-Allow-Origin", "*"))
