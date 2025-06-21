@@ -124,7 +124,7 @@ export const SimpleH3Controls: React.FC<SimpleH3ControlsProps> = ({
           {/* Clear button */}
           <button
             onClick={handleClear}
-            className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
           >
             <X className="w-4 h-4" />
             <span className="text-sm">Clear</span>

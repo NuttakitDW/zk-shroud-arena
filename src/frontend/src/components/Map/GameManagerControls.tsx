@@ -276,7 +276,7 @@ export const GameManagerControls: React.FC<GameManagerControlsProps> = ({
               <button
                 onClick={onClear}
                 disabled={currentZoneCount === 0}
-                className="flex-1 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-900 disabled:text-gray-600 text-gray-300 text-xs font-medium rounded transition-all flex items-center justify-center gap-1"
+                className="flex-1 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-900 disabled:text-gray-600 text-white text-xs font-medium rounded transition-all flex items-center justify-center gap-1"
               >
                 <RotateCcw className="w-3 h-3" />
                 Clear
