@@ -48,7 +48,7 @@ This project consists of the following components
 
 - Players must remain within dynamic zones to earn rewards.
 
-- Zones are shaped using H3 hexagonal cells, supporting safe zones of any convex shape, not just circles or squares.
+- Zones are shaped using H3 hexagonal cells, supporting complex safe zones composed of any combination of hexagons.
 
 - Player coordinates are never revealed—only ZK proofs are submitted every second.
 
