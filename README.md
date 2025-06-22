@@ -46,7 +46,7 @@ This project consists of the following components
 
 ![4](images/4.png)
 
-- Players must remain within dynamic zones to earn rewards, or lose health outside.
+- Players must remain within dynamic zones to earn rewards.
 
 - Zones are shaped using H3 hexagonal cells, supporting safe zones of any convex shape, not just circles or squares.
 
