@@ -58,6 +58,8 @@ This project consists of the following components
 
 As of now, the authors are not aware of any proof-of-location project that accepts a list of multiple convex polygons as public input; existing projects handle only a single, trivial shape such as a circle, square, or (at most) a heptagon. Our circuit supports any convex polygon, with a configurable `CIRCUIT_MAX_VERTICES` (currently 6). It also accepts a polygon list of up to 1,024 entries, which is sufficient for many complex maps representing regions or entire countries, and this limit can be raised via `CIRCUIT_MAX_POLYGON_HASHES` if more is needed. Increasing either parameter adds only minimal constraints. The circuit is written in Rust, providing compatibility with the ZK ecosystem, and is MIT-licensed, so it's free for anyone to use.
 
+For example, at resolution 8, it takes 1,581 H3 cells to represent the area of Berlin.
+
 ![Berlin Map](images/berlin-h3-cells.png)
 
 ## Circuit Constraints
