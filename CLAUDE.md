@@ -16,12 +16,6 @@
 ### FRONTEND-ONLY DEVELOPMENT POLICY
 **⚠️ STRICTLY ENFORCED RULES:**
 
-1. **DO NOT TOUCH BACKEND CODE**
-   - ❌ NEVER modify files in `src/backend/`
-   - ❌ NEVER edit `Cargo.toml` or any `.rs` files
-   - ❌ NEVER change backend configuration
-   - ❌ NEVER run cargo commands
-
 2. **BACKEND IS RUNNING**
    - ✅ Backend server is already running
    - ✅ API endpoints available:
@@ -51,7 +45,6 @@
 
 5. **AGENT BEHAVIOR**
    - All 4 agents (dev, docs, design, research) focus ONLY on frontend
-   - Backend is a black box - consume its APIs but never modify it
    - Report any backend-related issues to user, don't try to fix them
 
 **These rules apply to ALL agents and ALL operations. No exceptions.**

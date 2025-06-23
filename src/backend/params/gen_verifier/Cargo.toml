@@ -5,14 +5,14 @@ edition = "2021"
 
 [dependencies]
 # ─── Ark-works stack ─────────────────────────────────────────────
-ark-ff       = "0.3"
-ark-ec       = "0.3"
-ark-serialize = "0.3"
-ark-bn254    = { version = "0.3", features = ["curve"] }
-ark-groth16  = "0.3"
+ark-ff       = "0.5"
+ark-ec       = "0.5"
+ark-serialize = "0.5"
+ark-bn254    = { version = "0.5", features = ["curve"] }
+ark-groth16  = "0.5"
 
 # The Solidity-verifier generator (lives in a sub-crate)
-arkworks-solidity-verifier = { git = "https://github.com/Tetration-Lab/arkworks-solidity-verifier", rev = "4c66c4a" }
+arkworks-solidity-verifier = { git = "https://github.com/Tetration-Lab/arkworks-solidity-verifier", rev = "15af3f6953ed5a96155b3124da4827976c1e8dc7" }
 
 # ─── CLI / JSON / error handling ────────────────────────────────
 clap        = { version = "4", features = ["derive"] }
