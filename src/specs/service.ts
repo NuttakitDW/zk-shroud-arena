@@ -31,7 +31,6 @@ export const getProveData = async (body: ProveData): Promise<any> => {
   });
   
   const data = await response.json();
-  
   if (!response.ok) {
     return {
       ...data,

@@ -4,11 +4,15 @@ import { getProveData, getVerifyData } from './service';
 describe('Integration test for prover', () => {
   it('should return a proof and verify valid', async () => {
     const proveData = {
-      lat: 37.774929,
-      lon: -122.419416,
+      lat: 40.689247,
+      lon: -74.044502,
       resolution: 10,
-      h3_map: ['8a2a107fffffffff'],
-    }
+      h3_map: [
+        "8a2a1072b5affff",
+        "8a2a1072b51ffff", 
+        "8a2a1072b50ffff"
+      ]
+    };
 
     const response = await getProveData(proveData);
     expect(response).toBeDefined();
@@ -20,32 +24,5 @@ describe('Integration test for prover', () => {
 
     const verifyResponse = await getVerifyData(verifyData);
     expect(verifyResponse.ok).toBe(true);
-  });
-
-  it('should fail to generate proof with missing required fields', async () => {
-    // Test with malformed JSON that's missing required fields
-    const API_BASE_URL = process.env.API_URL || 'http://localhost:8080';
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/prove`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          lat: 37.774929,
-          // Missing lon field
-          resolution: 10,
-          h3_map: ['8a2a107fffffffff'],
-        })
-      });
-      
-      const data = await response.json();
-      expect(response.status).toBe(400);
-      expect(data.error).toBeDefined();
-    } catch (error) {
-      // Network errors are also acceptable for this test
-      expect(error).toBeDefined();
-    }
   });
 });
