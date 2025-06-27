@@ -130,6 +130,16 @@ apt install build-essential cmake pkg-config libsqlite3-dev sqlite3
 cargo run --release
 ```
 
+## Backend test
+
+Integration spec is in `src/specs`, you can quickly run to check backend with these commands
+
+```
+cd src/specs
+npm install
+npm run test
+```
+
 ## Backend Usage
 
 ### Prove
